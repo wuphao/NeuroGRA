@@ -32,6 +32,7 @@ output/**
 # Large or generated data
 data/**
 !data/.gitkeep
+paper/
 
 # Logs and temporary files
 *.log
