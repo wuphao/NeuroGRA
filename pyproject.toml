@@ -8,7 +8,10 @@ version = "0.1.0"
 description = "Graph-enhanced RAG and multi-agent assisted diagnosis research project for neurodegenerative diseases."
 readme = "README.md"
 requires-python = ">=3.11"
-dependencies = []
+dependencies = [
+    "pydantic>=2.8,<3",
+    "PyYAML>=6.0,<7",
+]
 
 [tool.setuptools]
 package-dir = {"" = "code"}
