@@ -1,3 +1,14 @@
+Metadata-Version: 2.4
+Name: neurogra
+Version: 0.1.0
+Summary: Graph-enhanced RAG and multi-agent assisted diagnosis research project for neurodegenerative diseases.
+Requires-Python: >=3.11
+Description-Content-Type: text/markdown
+Requires-Dist: neo4j<6,>=5.20
+Requires-Dist: pydantic<3,>=2.8
+Requires-Dist: pypdf<7,>=5.0
+Requires-Dist: PyYAML<7,>=6.0
+
 # NeuroGRA
 
 基于图谱增强 RAG 与多智能体协作的神经退行性疾病辅助诊疗系统研究项目。
@@ -53,13 +64,3 @@ Copy-Item .env.example .env
 ```
 
 `.env` 只保存在本地，不提交到版本库。
-
-## 文档入口
-
-- [总体设计与执行细则](docs/总结设计.md)
-- [医学知识图谱综述](docs/医学知识图谱综述.docx)
-- [神经退行性疾病研究综述](docs/神经退行性疾病人工智能辅助诊疗研究现状综述.docx)
-- [知识构建详细算法](docs/算法零_医学文本到RAG知识库与条件化知识图谱构建.md)
-- [鉴别证据检索详细算法](docs/算法一_鉴别证据检索详细设计.md)
-- [证据状态复核详细算法](docs/算法二_证据状态引导复核详细设计.md)
-- [项目文件放置规范](docs/项目文件放置规范.md)

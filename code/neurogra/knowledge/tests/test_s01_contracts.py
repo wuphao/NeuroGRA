@@ -98,10 +98,44 @@ class S01ContractTests(unittest.TestCase):
                 }
             )
             with init_store(config) as repo:
-                self.assertEqual(repo.migration_versions(), [1])
+                self.assertEqual(repo.migration_versions(), [1, 2])
                 tables = set(repo.table_names())
-                expected = {"documents", "spans", "chunks", "clause_revisions", "active_release"}
+                expected = {
+                    "documents",
+                    "document_events",
+                    "spans",
+                    "chunks",
+                    "clause_revisions",
+                    "active_release",
+                }
                 self.assertLessEqual(expected, tables)
+
+    def test_local_ollama_neo4j_config_shape(self) -> None:
+        config = BuildConfig.model_validate(
+            {
+                "schema_version": "1",
+                "extraction": {
+                    "provider": "ollama",
+                    "model": "qwen3.6:35b",
+                    "base_url": "http://localhost:11434/",
+                },
+                "embedding": {
+                    "provider": "ollama",
+                    "model": "qwen3-embedding:0.6b",
+                    "base_url": "http://localhost:11434/",
+                },
+                "graph_store": {
+                    "provider": "neo4j",
+                    "uri": "bolt://localhost:7687",
+                    "username": "neo4j",
+                    "password": "neo4j123456",
+                },
+            }
+        )
+
+        self.assertEqual(config.extraction.base_url, "http://localhost:11434")
+        self.assertEqual(config.embedding.model, "qwen3-embedding:0.6b")
+        self.assertEqual(config.graph_store.resolve_password(), "neo4j123456")
 
 
 if __name__ == "__main__":

@@ -16,6 +16,7 @@ class ParsedDocument(StrictBaseModel):
     parse_id: str
     parser_name: str
     parser_version: str
+    config_hash: str
     blocks: list[ParsedBlock]
     issues: list[str] = Field(default_factory=list)
 

@@ -15,17 +15,18 @@ from neurogra.knowledge.schemas.common import StrictBaseModel
 
 
 class PathConfig(StrictBaseModel):
-    data_root: Path = Path("data/knowledge")
-    output_root: Path = Path("output/knowledge")
+    data_root: Path = Field(default_factory=lambda: Path("data/knowledge"))
+    output_root: Path = Field(default_factory=lambda: Path("output/knowledge"))
 
 
 class DatabaseConfig(StrictBaseModel):
-    path: Path = Path("data/knowledge/registry.sqlite")
+    path: Path = Field(default_factory=lambda: Path("data/knowledge/registry.sqlite"))
 
 
 class ParsingConfig(StrictBaseModel):
-    adapter: Literal["docling"] = "docling"
+    adapter: Literal["docling", "pypdf_basic"] = "docling"
     ocr_policy: Literal["auto", "always", "never"] = "auto"
+    min_text_chars_per_page: int = Field(default=20, ge=0)
 
 
 class ChunkingConfig(StrictBaseModel):
@@ -43,9 +44,20 @@ class ChunkingConfig(StrictBaseModel):
 class ExtractionConfig(StrictBaseModel):
     provider: str | None = None
     model: str | None = None
+    base_url: str | None = None
     api_key_env: str | None = None
     prompt_version: str = "v1"
     max_transport_attempts: PositiveInt = 3
+
+    @field_validator("base_url")
+    @classmethod
+    def base_url_must_be_non_empty(cls, value: str | None) -> str | None:
+        if value is None:
+            return None
+        normalized = value.rstrip("/")
+        if not normalized:
+            raise ValueError("extraction.base_url must be a non-empty URL when provided")
+        return normalized
 
     @field_validator("api_key_env")
     @classmethod
@@ -65,13 +77,60 @@ class ExtractionConfig(StrictBaseModel):
 class EmbeddingConfig(StrictBaseModel):
     provider: str | None = None
     model: str | None = None
+    base_url: str | None = None
     api_key_env: str | None = None
     dimension: PositiveInt | None = None
+
+    @field_validator("base_url")
+    @classmethod
+    def base_url_must_be_non_empty(cls, value: str | None) -> str | None:
+        if value is None:
+            return None
+        normalized = value.rstrip("/")
+        if not normalized:
+            raise ValueError("embedding.base_url must be a non-empty URL when provided")
+        return normalized
 
     def resolve_api_key(self) -> str | None:
         if self.api_key_env is None:
             return None
         return os.environ.get(self.api_key_env)
+
+
+class GraphStoreConfig(StrictBaseModel):
+    provider: Literal["jsonl", "neo4j"] = "jsonl"
+    uri: str | None = None
+    username: str | None = None
+    password: str | None = None
+    password_env: str | None = None
+    database: str | None = None
+
+    @field_validator("uri", "username", "password", "password_env", "database")
+    @classmethod
+    def optional_strings_must_be_non_empty(cls, value: str | None) -> str | None:
+        if value is None:
+            return None
+        if value.strip() != value or not value:
+            raise ValueError("graph_store string fields must be non-empty and must not have surrounding whitespace")
+        return value
+
+    @model_validator(mode="after")
+    def neo4j_requires_connection_fields(self) -> "GraphStoreConfig":
+        if self.provider == "neo4j":
+            if not self.uri:
+                raise ValueError("graph_store.uri is required when graph_store.provider is neo4j")
+            if not self.username:
+                raise ValueError("graph_store.username is required when graph_store.provider is neo4j")
+            if not self.password and not self.password_env:
+                raise ValueError(
+                    "graph_store.password or graph_store.password_env is required when graph_store.provider is neo4j"
+                )
+        return self
+
+    def resolve_password(self) -> str | None:
+        if self.password_env is not None:
+            return os.environ.get(self.password_env)
+        return self.password
 
 
 class RetrievalConfig(StrictBaseModel):
@@ -93,6 +152,7 @@ class BuildConfig(StrictBaseModel):
     chunking: ChunkingConfig = Field(default_factory=ChunkingConfig)
     extraction: ExtractionConfig = Field(default_factory=ExtractionConfig)
     embedding: EmbeddingConfig = Field(default_factory=EmbeddingConfig)
+    graph_store: GraphStoreConfig = Field(default_factory=GraphStoreConfig)
     retrieval: RetrievalConfig = Field(default_factory=RetrievalConfig)
     review: ReviewConfig = Field(default_factory=ReviewConfig)
 
@@ -108,7 +168,14 @@ class BuildConfig(StrictBaseModel):
         return self
 
     def fingerprint(self) -> str:
-        payload = self.model_dump(mode="json", exclude={"extraction": {"api_key_env"}, "embedding": {"api_key_env"}})
+        payload = self.model_dump(
+            mode="json",
+            exclude={
+                "extraction": {"api_key_env"},
+                "embedding": {"api_key_env"},
+                "graph_store": {"password", "password_env"},
+            },
+        )
         encoded = json.dumps(payload, ensure_ascii=True, sort_keys=True, allow_nan=False)
         return hashlib.sha256(encoded.encode("utf-8")).hexdigest()
 
