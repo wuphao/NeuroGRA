@@ -2,6 +2,7 @@
 
 from neurogra.knowledge.schemas.graph import (
     AtomCondition,
+    CandidateClause,
     ClauseRevision,
     ConditionNode,
     Entity,
@@ -14,6 +15,7 @@ from neurogra.knowledge.schemas.text import Chunk, Citation, SearchHit
 
 __all__ = [
     "AtomCondition",
+    "CandidateClause",
     "Chunk",
     "Citation",
     "ClauseRevision",

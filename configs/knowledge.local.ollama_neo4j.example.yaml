@@ -1,0 +1,38 @@
+schema_version: "1"
+paths:
+  data_root: data/knowledge
+  output_root: output/knowledge
+database:
+  path: data/knowledge/registry.sqlite
+parsing:
+  adapter: docling
+  ocr_policy: auto
+  min_text_chars_per_page: 20
+chunking:
+  target_tokens: 450
+  max_tokens: 800
+  preserve_clause_context: true
+extraction:
+  provider: ollama
+  model: qwen3.6:35b
+  base_url: http://localhost:11434
+  prompt_version: v1
+  max_transport_attempts: 3
+embedding:
+  provider: ollama
+  model: qwen3-embedding:0.6b
+  base_url: http://localhost:11434
+  dimension: null
+graph_store:
+  provider: neo4j
+  uri: bolt://localhost:7687
+  username: neo4j
+  password: neo4j123456
+  database: neo4j
+retrieval:
+  lexical_top_k: 20
+  vector_top_k: 20
+  rrf_k: 60
+  allow_degraded: true
+review:
+  require_clause_approval: true

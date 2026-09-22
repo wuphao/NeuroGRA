@@ -123,6 +123,54 @@ class ValidationIssue(StrictBaseModel):
     resolver: str | None = None
 
 
+class CandidateClause(SchemaModel):
+    candidate_id: str
+    extraction_run_id: str
+    chunk_id: str
+    subject_text: str
+    subject_type: Literal["disease", "syndrome", "phenotype", "examination", "biomarker"]
+    object_text: str
+    object_type: Literal["disease", "syndrome", "phenotype", "examination", "biomarker"]
+    predicate: Literal["supports", "weakens", "associated_with", "distinguishes", "limits"]
+    direction: Literal["supporting", "weakening", "neutral", "limiting"]
+    diagnostic_level: Literal[
+        "cognitive_state",
+        "syndrome",
+        "etiology",
+        "biological",
+        "pathological",
+        "unspecified",
+    ] = "unspecified"
+    modality: Literal["required", "recommended", "permitted", "prohibited", "uncertain", "unspecified"]
+    condition: ConditionNode | None = None
+    exceptions: list[ConditionNode] = Field(default_factory=list)
+    evidence_refs: list[EvidenceRef]
+    field_evidence: dict[str, list[EvidenceRef]] = Field(default_factory=dict)
+    assertion_text: str
+    raw_payload: dict[str, object] = Field(default_factory=dict)
+    issues: list[ValidationIssue] = Field(default_factory=list)
+
+    @field_validator("evidence_refs")
+    @classmethod
+    def candidate_evidence_required(cls, value: list[EvidenceRef]) -> list[EvidenceRef]:
+        if not value:
+            raise ValueError("CandidateClause.evidence_refs must not be empty")
+        return value
+
+    @model_validator(mode="after")
+    def candidate_direction_must_match_predicate(self) -> "CandidateClause":
+        allowed = {
+            "supports": {"supporting"},
+            "weakens": {"weakening"},
+            "associated_with": {"neutral"},
+            "distinguishes": {"supporting", "weakening", "neutral"},
+            "limits": {"limiting"},
+        }
+        if self.direction not in allowed[self.predicate]:
+            raise ValueError("direction is incompatible with predicate")
+        return self
+
+
 class ClauseRevision(SchemaModel):
     clause_id: str
     revision_id: str
