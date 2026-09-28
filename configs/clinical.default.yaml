@@ -1,0 +1,32 @@
+schema_version: "1"
+patient_data_root: data/clinical/patients
+allowed_roots: []
+database: data/clinical/clinical.sqlite
+data_root: data/clinical
+output_root: output/clinical
+knowledge_config: configs/knowledge.local.ollama_neo4j.example.yaml
+knowledge_release_id: null
+model:
+  provider: ollama
+  base_url: http://localhost:11434
+  model: qwen3.6:35b
+  timeout_seconds: 120
+  max_output_tokens: 4096
+  context_tokens: 16384
+  max_input_chars: 24000
+  transport_attempts: 2
+budget:
+  llm: 48
+  retrieval: 24
+  image: 2
+  seconds: 900
+max_parallel_tasks: 4
+vector_enabled: true
+vector:
+  base_url: http://localhost:11434
+  model: bge-m3:latest
+  dimension: 1024
+  max_chars: 1800
+  timeout_seconds: 45
+  index_manifest: data/knowledge/vector_indexes/vector_f17bed05a0f4159c607f47e22235af51/manifest.json
+  index_root: data/knowledge/vector_indexes

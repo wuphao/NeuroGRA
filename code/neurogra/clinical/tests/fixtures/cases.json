@@ -1,0 +1,9 @@
+[
+ {"患者ID":"synthetic_empty","synthetic":true},
+ {"患者ID":"synthetic_unknown","synthetic":true,"任意中文项目":{"陌生表格":{"时间":"2026年8月","总分":17}}},
+ {"患者ID":"synthetic_labs","synthetic":true,"检验":{"名称":"维生素B12","时间":"2026-09-12","数值":320,"单位":"pg/mL"}},
+ {"患者ID":"synthetic_mri","synthetic":true,"影像数据":[{"模态":"MRI","时间":"2026-09","路径":"synthetic/MRI","序列":"T1"}]},
+ {"患者ID":"synthetic_pair","synthetic":true,"影像数据":[{"模态":"MRI","时间":"2026-09-12","路径":"synthetic/MRI","序列":"T1"},{"模态":"PET","时间":"2026-09-12","路径":"synthetic/PET","示踪剂":"FDG"}]},
+ {"患者ID":"synthetic_conflict","synthetic":true,"检验":[{"名称":"检验A","时间":"2026-09-12","数值":10,"单位":"u"},{"名称":"检验A","时间":"2026-09-12","数值":20,"单位":"u"}]},
+ {"患者ID":"synthetic_missing","synthetic":true,"检查说明":"未做检查","症状记录":"否认幻觉","其他描述":"未提到记忆问题"}
+]

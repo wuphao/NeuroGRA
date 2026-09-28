@@ -15,6 +15,10 @@ dependencies = [
     "PyYAML>=6.0,<7",
 ]
 
+[project.optional-dependencies]
+clinical = ["openpyxl>=3.1,<4", "python-docx>=1.1,<2", "pydicom>=3,<4"]
+clinical-imaging = ["SimpleITK>=2.3,<3"]
+
 [tool.setuptools]
 package-dir = {"" = "code"}
 

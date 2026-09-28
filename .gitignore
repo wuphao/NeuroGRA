@@ -50,3 +50,6 @@ temp/
 .codex_docx_ref_render/
 .docx_qa_pages/
 .docx_qa_pages_updated/
+
+# Private clinical reports
+docs/病例报告/
