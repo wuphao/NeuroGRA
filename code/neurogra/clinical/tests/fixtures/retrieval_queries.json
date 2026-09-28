@@ -1,0 +1,123 @@
+{
+  "dataset_id": "source_anchored_smoke_v1",
+  "release_id": "release_89168ff3faf8e2baf5b278772b25b0e398f04d2b423274e582fb8f326213e69a",
+  "annotation_status": "assistant_source_reviewed_not_expert_gold",
+  "queries": [
+    {
+      "id": "q01",
+      "split": "dev",
+      "query": "初次评估认知下降应向家属或知情者询问哪些病史",
+      "candidate_terms": [
+        "病史"
+      ],
+      "relevant_span_ids": [
+        "span_230d5f4872c5844867c8ed0557514797ddfb1a430f0e0f7dfb313bd556a2a931"
+      ],
+      "source_pdf_pages": [
+        6
+      ]
+    },
+    {
+      "id": "q02",
+      "split": "dev",
+      "query": "认知障碍鉴别诊断的血液检查包括甲状腺和维生素B12吗",
+      "candidate_terms": [
+        "维生素"
+      ],
+      "relevant_span_ids": [
+        "span_6f3256848d0508b9b8d37f1f5f5da7fec87ab362a99476f4f7226441d386bce9"
+      ],
+      "source_pdf_pages": [
+        8
+      ]
+    },
+    {
+      "id": "q03",
+      "split": "dev",
+      "query": "结构MRI和FDG-PET在轻度认知障碍评估中的作用",
+      "candidate_terms": [
+        "PET"
+      ],
+      "relevant_span_ids": [
+        "span_6eb2d4e23164aa4e697d7e89b703e222e066df79ea638ba7939521d6e60359a3",
+        "span_5bd1a252fb2687216e59a4049069029271601ea698e8ad9d8a98eca2a5cb4b8e"
+      ],
+      "source_pdf_pages": [
+        10,
+        11
+      ]
+    },
+    {
+      "id": "q04",
+      "split": "dev",
+      "query": "脑微出血和脑表面含铁血黄素沉积对应哪些影像特征",
+      "candidate_terms": [
+        "微出血"
+      ],
+      "relevant_span_ids": [
+        "span_5bd1a252fb2687216e59a4049069029271601ea698e8ad9d8a98eca2a5cb4b8e"
+      ],
+      "source_pdf_pages": [
+        11
+      ]
+    },
+    {
+      "id": "q05",
+      "split": "heldout",
+      "query": "血浆NfL和GFAP生物标志物的临床应用限制",
+      "candidate_terms": [
+        "NfL"
+      ],
+      "relevant_span_ids": [
+        "span_71963eed11606a930d2db3bca3f8b52b1bfdf7f107d10bd980a8fc691f55e667"
+      ],
+      "source_pdf_pages": [
+        9
+      ]
+    },
+    {
+      "id": "q06",
+      "split": "heldout",
+      "query": "抗Aβ单抗治疗中ARIA相关风险和监测",
+      "candidate_terms": [
+        "ARIA"
+      ],
+      "relevant_span_ids": [
+        "span_666b735f4c7e960b1298660c1557d8815a36c4a6973e984b1378ad16f852becb",
+        "span_8e759ab35321278471b8689b3a6652cc23a77e172835cdda5bacdcc0477a99c9"
+      ],
+      "source_pdf_pages": [
+        12,
+        14
+      ]
+    },
+    {
+      "id": "q07",
+      "split": "heldout",
+      "query": "轻度认知障碍患者的随访管理与照护者健康教育",
+      "candidate_terms": [
+        "随访"
+      ],
+      "relevant_span_ids": [
+        "span_844c5420af34cee04c90e42f8767308799904f1f181bdcfdcf9d1553df6c224e"
+      ],
+      "source_pdf_pages": [
+        13
+      ]
+    },
+    {
+      "id": "q08",
+      "split": "heldout",
+      "query": "主观认知功能下降的早期识别与进展风险因素",
+      "candidate_terms": [
+        "主观认知"
+      ],
+      "relevant_span_ids": [
+        "span_8e759ab35321278471b8689b3a6652cc23a77e172835cdda5bacdcc0477a99c9"
+      ],
+      "source_pdf_pages": [
+        14
+      ]
+    }
+  ]
+}

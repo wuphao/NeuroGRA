@@ -3,6 +3,11 @@ class TreeNode(object):
         self.val = val
         self.left = left
         self.right = right
+class Node:
+    def __init__(self, x, next=None, random=None):
+        self.val = int(x)
+        self.next = next
+        self.random = random
 class Solution:
 
     def partition(self, s):
@@ -188,6 +193,175 @@ class Solution:
                     maxans = max(maxans, i - stack[-1])
 
         return maxans
+    def partitionLabels(self, s):
+        """
+        :type s: str
+        :rtype: List[int]
+        """
+        res =[]
+        minindex = {}
+        maxindex = {}
+        for index, c in enumerate(s):
+            if c not in minindex:
+                minindex[c] = index
+                maxindex[c] = index
+            else:
+                if index >maxindex[c]:
+                    maxindex[c]=index
+                if index<minindex[c]:
+                    minindex[c]=index
+        templeft = -1
+        tempright = -1
+        for c in sorted(minindex, key=lambda x: minindex[x]):
+            if tempright<minindex[c]:
+                if tempright !=-1:
+                    res.append(tempright-templeft+1)
+                templeft = minindex[c]
+                tempright= maxindex[c]
+            elif minindex[c]>templeft and maxindex[c]>tempright:
+                tempright = maxindex[c]
+            elif minindex[c]<templeft and maxindex[c]<tempright:
+                templeft = minindex[c]
+            elif minindex[c]<templeft and maxindex[c]>tempright:
+                templeft = minindex[c]
+                tempright = maxindex[c]
+            else:
+                continue
+        res.append(tempright-templeft+1)
+        return res
+    def reverse(self,head,k):
+        pre = None
+        curr = head
+        if not head or not head.next:
+            return head
+        nex = head.next
+        for i in range(0,k):
+            if not curr:
+                return
+            curr.next = pre
+            pre = curr
+            curr = nex
+            nex = nex.next
+
+    def copyRandomList(self, head):
+        """
+        :type head: Node
+        :rtype: Node
+        """
+        newhead = None
+        h = head
+        nodemap={}
+        while h:
+            curr = Node(h.val)
+            nodemap[h]=curr
+            if h==head:
+                newhead = curr
+            h=h.next
+        h1 = head
+        nh1 = newhead
+        while h1:
+            if not h1.random:
+                nh1.random = None
+            else:
+                nh1.random = nodemap[h1.random]
+            if not h1.next:
+                nh1.next  = None
+            else:
+                nh1.next = nodemap[h1.next]
+            nh1 = nh1.next
+            h1=h1.next
+        return newhead
+    def searchMatrix(self, matrix, target):
+        """
+        :type matrix: List[List[int]]
+        :type target: int
+        :rtype: bool
+        """
+        m =len(matrix)
+        n = len(matrix[0])
+        rowleft = 0
+        rowright = m-1
+        while rowleft<=rowright:
+            mid = (rowright+rowleft) //2
+            if matrix[mid][0] == target:
+                return True
+            if matrix[mid][0] >target:
+                rowright =mid -1
+            if matrix[mid][0]<target:
+                rowleft = mid +1
+        row = rowleft -1
+        cleft = 0
+        cright = n-1
+        while cleft<=cright:
+            mid = (cleft+cright) //2
+            if matrix[row][mid] ==target:
+                return True
+            if matrix[row][mid]>target:
+                cright = mid -1
+            if matrix[row][mid]<target:
+                cleft = mid +1
+        return False
+    def findMin(self, nums):
+        """
+        :type nums: List[int]
+        :rtype: int
+        """
+        minnum = 1000000
+        n = len(nums)
+        if nums[n-1]>nums[0]:
+            return nums[0]
+        l = 0
+        r= n-1
+        while l<=r:
+            m = (l+r)/2
+            if nums[m]<minnum:
+                minnum = nums[m]
+            if nums[m]>=nums[l] :
+                l = m+1
+            else :
+                r= m-1
+        return minnum
+
+
+class LRUCache(object):
+    def __init__(self, capacity):
+        """
+        :type capacity: int
+        """
+        
+
+    def get(self, key):
+        """
+        :type key: int
+        :rtype: int
+        """
+        
+
+    def put(self, key, value):
+        """
+        :type key: int
+        :type value: int
+        :rtype: None
+        """
+        
+        
+            
+    
+
+        
+
+
+        
+
+
+            
+
+        
+            
+
+
+
+
         
 
         
