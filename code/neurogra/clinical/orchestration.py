@@ -61,7 +61,7 @@ def validate_plan(plan: TaskPlan, snapshot: CaseSnapshot) -> list[str]:
             errors.append('unassigned_image_assets')
         if not set(task.permitted_tools) <= ({"read_case_record", "search_knowledge", "diamond_predict"} if task.agent_type == "imaging" else {"read_case_record", "search_knowledge"}):
             errors.append("tool_not_enabled")
-        if task.budget.max_llm_calls > 3 or task.budget.max_retrieval_calls > 2 or task.budget.timeout_seconds > 120:
+        if task.budget.max_llm_calls > 64 or task.budget.max_retrieval_calls > 2 or task.budget.timeout_seconds > 3600:
             errors.append("task_budget_exceeded")
     if seen != expected:
         errors.append("missing_eligible_role")
@@ -85,8 +85,9 @@ def fallback_plan(snapshot, issues=None):
 
 
 class MainAgent:
-    def __init__(self, gateway):
+    def __init__(self, gateway, task_budget=None):
         self.gateway = gateway
+        self.task_budget = task_budget
 
     def plan(self, snapshot: CaseSnapshot) -> TaskPlan:
         if not eligible_roles(snapshot):
@@ -97,6 +98,17 @@ class MainAgent:
                                   "status": o.status, "quote": o.quote[:300]} for o in snapshot.observations],
                 "images": [{"asset_id": i.asset_id, "modality": i.modality, "status": i.status} for i in snapshot.images]}
         background = [o.observation_id for o in snapshot.observations if "background" in o.domains]
+        grouped = len(snapshot.observations) > 40
+        if grouped:
+            # Planning is about task coverage. All observations remain assigned;
+            # the model sees the available forms/fields rather than repeated IDs.
+            data['observations'] = [{'input_ref': role,
+                'forms': sorted({str(o.context.get('名称', '未命名资料')) for o in snapshot.observations if role in o.domains}),
+                'fields': sorted({o.name for o in snapshot.observations if role in o.domains}),
+                'observation_count': sum(role in o.domains for o in snapshot.observations)} for role in eligible_roles(snapshot)]
+            data['inventory'] = [{'domain': i.domain, 'availability': i.availability,
+                                  'limitations': i.limitations} for i in snapshot.inventory]
+            data['input_ref_instruction'] = 'input_refs使用对应角色名；程序会将该角色全部原始观察分配给任务，不遗漏字段。'
         issues = []
         if self.gateway:
             for attempt in range(2):
@@ -105,9 +117,13 @@ class MainAgent:
                     plan = TaskPlan(tasks=[AgentTask(
                         task_id=identity("task", [snapshot.case_id, item.agent_type, snapshot.version]),
                         agent_type=item.agent_type, case_version=snapshot.version,
-                        input_refs=item.input_refs, background_refs=background,
+                        input_refs=([o.observation_id for o in snapshot.observations if item.agent_type in o.domains]
+                                    if grouped and item.input_refs == [item.agent_type] else item.input_refs), background_refs=background,
                         questions=item.questions, why=item.why,
                         permitted_tools=["read_case_record", "search_knowledge"]) for item in proposal.tasks])
+                    if self.task_budget:
+                        for task in plan.tasks:
+                            task.budget = self.task_budget.model_copy(deep=True)
                     for task in plan.tasks:
                         if task.agent_type == 'imaging':
                             task.input_refs = list(dict.fromkeys(task.input_refs + [a.asset_id for a in snapshot.images]))
@@ -128,7 +144,11 @@ class MainAgent:
                     break
         else:
             issues.append(Issue(code="planner_not_called", stage="planning", message="明确选择了离线规则模式"))
-        return fallback_plan(snapshot, issues)
+        plan = fallback_plan(snapshot, issues)
+        if self.task_budget:
+            for task in plan.tasks:
+                task.budget = self.task_budget.model_copy(deep=True)
+        return plan
 
 
 class AgentHandler(Protocol):
@@ -165,6 +185,10 @@ class ToolProxy:
         if self.gateway is None:
             raise ModelFailure("task_model_unconfigured")
         return await asyncio.to_thread(self.gateway.generate_structured, system, data, schema)
+
+    def record_analysis_batch(self, batch_index, observation_ids, status):
+        self.store.event(self.run_id, 'analysis_batch', {'task_id': self.task.task_id,
+            'batch_index': batch_index, 'observation_ids': observation_ids, 'status': status})
 
     async def read_case_record(self, record_id, start=0, end=None):
         self.check_deadline()

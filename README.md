@@ -38,6 +38,8 @@ NeuroGRA/
 
 ## 开发环境
 
+RWE 患者编号到智能体分析、知识检索和报告的入口见 [RWE 运行说明](docs/RWE患者ID到可追溯报告运行说明.md)。核心命令：`python -m neurogra.clinical.cli analyze-rwe --patient-id "<患者编号>"`。
+
 建议使用 Python 3.11 或以上版本。
 
 ```powershell

@@ -77,6 +77,56 @@ def audit_run(config, run_id, require_all_agents=False):
     check('global_budget_preserved', all(sum(c['n'] for c in summary['calls'] if c['kind'] == k) <= v for k,v in limits.items()))
     from pathlib import Path
     check('reports_exist', all(Path(p).is_file() for p in outcome['report_paths'].values()))
+    rwe_sources = store.objects(run_id, 'rwe_source')
+    if rwe_sources:
+        from neurogra.knowledge.utils import sha256_file
+        source = rwe_sources[-1]['payload']
+        path = Path(source['path'])
+        source_valid = path.is_file() and sha256_file(path) == source['sha256']
+        check('rwe_source_checksum', source_valid)
+        document = json.loads(path.read_text(encoding='utf-8')) if source_valid else {}
+        check('rwe_patient_binding', document.get('patient', {}).get('patient_number') == report.patient_id)
+        records = {r.record_id: r for r in snapshot.records}
+        def resolve(pointer):
+            value = document
+            for key in pointer.lstrip('/').split('/'):
+                key = key.replace('~1', '/').replace('~0', '~')
+                value = value[int(key)] if isinstance(value, list) else value[key]
+            return value
+        grounded = True
+        located = 0
+        for record in records.values():
+            locator = record.locator.get('rwe')
+            if locator:
+                located += 1
+                try:
+                    grounded &= resolve(locator['value_pointer']) == record.raw_value
+                except (KeyError, IndexError, ValueError, TypeError):
+                    grounded = False
+        check('rwe_records_match_source', grounded and located > 0)
+        check('rwe_observations_match_records', all(
+            bool(o.source_refs) and all(ref in records and o.quote in records[ref].text for ref in o.source_refs)
+            for o in snapshot.observations))
+        check('rwe_interpretations_explained', all(c.rationale.strip() and c.applicability.strip()
+              for c in report.claims if c.kind == 'interpretation'))
+        check('rwe_source_failures_visible', not source['issues'] or report.status == 'partial')
+        check('rwe_calls_settled', not any(c['status'] == 'running' for c in summary['calls']))
+        narrative = store.objects(run_id, 'narrative')
+        binding = narrative[-1]['object_id'] if narrative else None
+        verifications = [r for r in store.objects(run_id, 'narrative_verification')
+                         if binding and r['object_id'].startswith(binding + '_')]
+        verified = bool(verifications and verifications[-1]['payload']['supported']
+                        and not verifications[-1]['payload']['unsupported_statements'])
+        source_validations = [r['payload'] for r in store.objects(run_id, 'narrative_source_validation')
+                              if r['object_id'] == binding]
+        if report.narrative_method == 'source_rendered' and source_validations:
+            from .utils import fingerprint
+            validation = source_validations[-1]
+            verified = (validation['exact_source_rendering']
+                        and validation['text_fingerprint'] == fingerprint(report.natural_language_report)
+                        and all(ref in observations or ref in {c.claim_id for c in report.claims}
+                                for ref in report.narrative_source_ids))
+        check('rwe_narrative_verified_or_unavailable', report.narrative_status != 'generated' or verified)
     result = {'run_id': run_id, 'protocol_passed': not errors, 'roles': sorted(roles),
         'checks': checks, 'errors': errors, 'calls': summary['calls'],
         'not_validated': ['临床诊断准确率和知识适用性不由本协议验收证明',

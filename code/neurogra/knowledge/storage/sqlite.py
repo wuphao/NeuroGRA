@@ -345,6 +345,18 @@ class Repository:
 
     def save_parsed_document(self, parsed_document: ParsedDocument) -> None:
         with self.connection:
+            # Published citations still resolve through these authoritative rows.
+            # Reprocessing must use a new parser/config identity, not erase them.
+            published = self.connection.execute(
+                """SELECT 1 FROM release_members rm
+                JOIN releases r ON r.release_id = rm.release_id
+                JOIN chunk_spans cs ON rm.object_type = 'chunk' AND rm.object_id = cs.chunk_id
+                JOIN spans s ON s.span_id = cs.span_id
+                WHERE s.parse_id = ? AND r.status IN ('validated', 'active', 'retired')
+                LIMIT 1""", (parsed_document.parse_id,),
+            ).fetchone()
+            if published:
+                raise ValueError("published_parse_is_immutable: use a new parser/config version")
             self._delete_parse_derived_data(parsed_document.parse_id)
             self.connection.execute(
                 """

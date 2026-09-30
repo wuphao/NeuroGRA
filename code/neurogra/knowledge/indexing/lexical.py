@@ -113,6 +113,8 @@ def search_text(
     for chunk_id, score in scores[: request.top_k]:
         chunk = chunk_map[chunk_id]
         citations = citation_resolver(chunk) if citation_resolver is not None else []
+        if citation_resolver is not None and {c.span_id for c in citations} != set(chunk.span_ids):
+            raise ValueError("release_citation_missing")
         if not citations:
             citations = [
                 Citation(

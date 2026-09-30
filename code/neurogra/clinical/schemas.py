@@ -131,9 +131,9 @@ class CaseSnapshot(Contract):
 
 
 class TaskBudget(Contract):
-    max_llm_calls: int = Field(default=3, ge=0)
+    max_llm_calls: int = Field(default=3, ge=0, le=64)
     max_retrieval_calls: int = Field(default=2, ge=0)
-    timeout_seconds: float = Field(default=120, gt=0)
+    timeout_seconds: float = Field(default=120, gt=0, le=3600)
 
 
 class AgentTask(Contract):
@@ -165,6 +165,8 @@ class Claim(Contract):
     tool_result_ids: list[str] = Field(default_factory=list)
     strength: Literal["descriptive", "tentative", "conditional", "supported"]
     limitations: list[str] = Field(default_factory=list)
+    rationale: str = ''
+    applicability: str = ''
 
 
 class SpecialistItem(Contract):
@@ -275,6 +277,7 @@ class ClaimDependency(Contract):
 
 class FinalReport(Contract):
     natural_language_report: str = ''
+    narrative_method: str = ''
     narrative_status: Literal['not_generated', 'generated', 'unavailable'] = 'not_generated'
     narrative_source_ids: list[str] = Field(default_factory=list)
     patient_id: str

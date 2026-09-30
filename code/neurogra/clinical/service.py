@@ -43,6 +43,11 @@ def prepare_run(raw, config, store, run_id, use_model=True, query=None):
     gateway = ModelGateway(config.model, store, run_id) if use_model else None
     try:
         issues = []
+        source = saved('rwe_source')
+        if source:
+            issues.extend(Issue(code='rwe_form_failed', stage='intake',
+                message=f"RWE表单 {item['form_id']} 读取失败：{item['code']}，不能视为该患者未检查。")
+                for item in source['issues'])
         release_id, evidence = None, None
         binding = saved('knowledge_binding')
         if binding is None:
@@ -80,12 +85,14 @@ def prepare_run(raw, config, store, run_id, use_model=True, query=None):
                     store.save(run_id, 'parse', result.attachment_id, result)
                 parsed.append(result)
             intake.images = [inspect_image(i, config) for i in intake.images]
-            snapshot = profile_case(intake, parsed, config, gateway)
+            # Structured RWE fields already have exact values and locators. Avoid
+            # re-extracting hundreds of atomic values with an LLM; agents analyze them.
+            snapshot = profile_case(intake, parsed, config, None if source else gateway)
             store.save(run_id, 'snapshot', snapshot.case_id, snapshot)
         write_json(config.resolve(config.data_root) / 'cases' / intake.raw_input_hash / run_id / 'snapshot.json', snapshot)
         store.status(run_id, 'planning')
         cached = saved('plan')
-        plan = TaskPlan.model_validate(cached) if cached else MainAgent(gateway).plan(snapshot)
+        plan = TaskPlan.model_validate(cached) if cached else MainAgent(gateway, config.task_budget).plan(snapshot)
         if cached is None:
             store.save(run_id, 'plan', 'main', plan)
         issues.extend(snapshot.issues + plan.issues)

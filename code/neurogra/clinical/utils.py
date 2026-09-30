@@ -1,5 +1,8 @@
 import hashlib
 import json
+import tempfile
+import os
+import time
 from pathlib import Path
 from datetime import date
 from .schemas import TimeValue
@@ -21,9 +24,30 @@ def identity(prefix, value) -> str:
 
 def write_json(path: Path, value) -> None:
     path.parent.mkdir(parents=True, exist_ok=True)
-    temporary = path.with_suffix(path.suffix + ".tmp")
-    temporary.write_text(dumps(value), encoding="utf-8")
-    temporary.replace(path)
+    content = dumps(value)
+    # Separate runs may persist the same patient input concurrently.
+    with tempfile.NamedTemporaryFile(mode="w", encoding="utf-8", dir=path.parent,
+                                     prefix=path.name + ".", suffix=".tmp", delete=False) as handle:
+        temporary = Path(handle.name)
+        try:
+            handle.write(content)
+        except BaseException:
+            handle.close()
+            temporary.unlink(missing_ok=True)
+            raise
+    try:
+        for attempt in range(6):
+            try:
+                temporary.replace(path)
+                break
+            except PermissionError as exc:
+                # Windows can briefly deny replacement while another writer or
+                # scanner has the destination open. Permanent failures still fail.
+                if os.name != 'nt' or getattr(exc, 'winerror', None) not in {5, 32} or attempt == 5:
+                    raise
+                time.sleep(.01 * (2 ** attempt))
+    finally:
+        temporary.unlink(missing_ok=True)
 
 
 def parse_time(raw) -> TimeValue:

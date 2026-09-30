@@ -323,35 +323,80 @@ class Solution:
         return minnum
 
 
-class LRUCache(object):
-    def __init__(self, capacity):
-        """
-        :type capacity: int
-        """
+    def longestPalindrome(self, s):
+        n = len(s)
+        if n < 2:
+            return s
         
-
-    def get(self, key):
+        dp = [[False] * n for _ in range(n)]
+        res = s[0]      
+        max_len = 1
+        for i in range(n):
+            dp[i][i] = True
+        for i in range(n - 1, -1, -1):
+            for j in range(i + 1, n):
+                if s[i] == s[j]:
+                    if j - i == 1:              
+                        dp[i][j] = True
+                    else:                      
+                        dp[i][j] = dp[i+1][j-1]
+                    if dp[i][j] and j - i + 1 > max_len:
+                        max_len = j - i + 1
+                        res = s[i:j+1]
+        return res
+    def findDuplicate(self, nums):
         """
-        :type key: int
+        :type nums: List[int]
         :rtype: int
         """
-        
-
-    def put(self, key, value):
+        slow,fast = nums[0],nums[0]
+        while 1:
+            slow = nums[slow]
+            fast = nums[nums[fast]]
+            if slow == fast :
+                break
+        slow = nums[0]
+        while slow!=fast:
+            slow = nums[slow]
+            fast = nums[fast]
+        return slow
+    def quickselect(self,nums,l,r,k):
+        if l == r:
+            return nums[k]
+        p = nums[l]
+        i = l
+        j = r
+        while i<j:
+            while nums[i]<p:
+                i+=1
+            while nums[j]>p:
+                j-=1
+            if i<j:
+                nums[i],nums[j] = nums[j],nums[i]
+            if k<=j:
+                return self.quickselect(nums,l,j,k)
+            else:
+                return self.quickselect(nums,j+1,r,k)
+    def findKthLargest(self, nums, k):
         """
-        :type key: int
-        :type value: int
-        :rtype: None
+        :type nums: List[int]
+        :type k: int
+        :rtype: int
         """
-        
-        
-            
-    
-
-        
-
-
-        
+        return self.quickselect(nums,0,len(nums)-1,len(nums)-k)
+    def maxSubArray(self, nums):
+        """
+        :type nums: List[int]
+        :rtype: int
+        """
+        temp  = nums[0]
+        res = temp
+        for i in range(1,len(nums)):
+            if temp<0:
+                temp = 0
+            temp +=nums[i]
+            res = max(temp,res)
+        return res
 
 
             

@@ -100,6 +100,17 @@ class WorkflowTests(unittest.TestCase):
         self.assertEqual(result.report.assessment_status, 'insufficient_data')
         self.assertEqual(result.status, 'completed')
 
+    def test_source_conflict_is_visible_even_when_models_fail(self):
+        raw = {'患者ID': 'conflicting-source', '检验': [
+            {'名称': '检验项目', '时间': '2026-09-01', '数值': 1},
+            {'名称': '检验项目', '时间': '2026-09-01', '数值': 2}]}
+        prep = prepare_patient(raw, self.config, False)
+        with patch('neurogra.clinical.workflow.ModelGateway.generate_structured', side_effect=RuntimeError('offline')):
+            result = continue_run(prep, self.config)
+        self.assertTrue(any('同日同项目记录存在不同原值' in item for item in result.report.unresolved))
+        for observation in prep.snapshot.observations:
+            self.assertIn(observation.observation_id, Path(result.report_paths['provenance']).read_text(encoding='utf-8'))
+
     def test_lock_excludes_concurrent_resume(self):
         with self.store.workflow_lock(self.prep.run_id):
             with self.assertRaises(OSError):

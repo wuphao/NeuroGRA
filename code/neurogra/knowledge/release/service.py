@@ -52,8 +52,9 @@ def build_release(selection: ReleaseSelection, config: BuildConfig, repository: 
         issues.append("no_approved_child_chunks")
     release_id = stable_hash(
         {
-            "chunk_ids": [chunk.chunk_id for chunk in approved_chunks],
-            "revision_ids": [revision.revision_id for revision in approved_revisions],
+            "chunks": [chunk.model_dump(mode="json", exclude={"created_at"}) for chunk in approved_chunks],
+            "revisions": [revision.model_dump(mode="json", exclude={"created_at"}) for revision in approved_revisions],
+            "terminology_version": selection.terminology_version,
             "config_hash": config.fingerprint(),
         },
         "release",
@@ -64,6 +65,17 @@ def build_release(selection: ReleaseSelection, config: BuildConfig, repository: 
     index_path = release_root / "text" / "bm25_index.json"
     manifest_path = release_root / "manifest.json"
     checks_path = release_root / "checks.json"
+    existing = repository.connection.execute(
+        "SELECT status FROM releases WHERE release_id = ?", (release_id,),
+    ).fetchone()
+    if existing and existing["status"] in {"validated", "active", "retired"}:
+        manifest = repository.get_release_manifest(release_id)
+        for name, path in (("text_chunks", text_path), ("graph_clauses", graph_path),
+                           ("bm25", index_path), ("checks", checks_path)):
+            if not path.is_file() or sha256_file(path) != manifest.artifact_checksums.get(name):
+                raise ValueError(f"published_release_checksum_mismatch:{name}")
+        return ReleaseBuildResult(release_id=release_id, manifest=manifest,
+                                  activated=existing["status"] == "active")
     release_root.mkdir(parents=True, exist_ok=True)
     write_jsonl(text_path, approved_chunks)
     write_jsonl(graph_path, approved_revisions)
