@@ -14,10 +14,13 @@ from .utils import write_json
 
 def main():
     parser = argparse.ArgumentParser(description="NeuroGRA clinical agents")
-    parser.add_argument("--config", default="configs/clinical.default.yaml")
+    parser.add_argument("--config", default=None)
     sub = parser.add_subparsers(dest="command", required=True)
     analyze = sub.add_parser("analyze")
     analyze.add_argument("--patient", required=True)
+    rwe = sub.add_parser('analyze-rwe', help='Analyze an exact RWE patient number')
+    rwe.add_argument('--patient-id', required=True, help='RWE patient_number, not internal numeric patient_id')
+    rwe.add_argument('--rwe-config', default='configs/rwe.project8.yaml')
     resume = sub.add_parser("resume")
     resume.add_argument("--run-id", required=True)
     narrative = sub.add_parser('write-narrative')
@@ -42,8 +45,19 @@ def main():
     inspect = sub.add_parser("inspect-run")
     inspect.add_argument("--run-id", required=True)
     args = parser.parse_args()
-    config = load_config(args.config)
-    if args.command == 'write-narrative':
+    config = load_config(args.config or ('configs/clinical.rwe.yaml' if args.command == 'analyze-rwe'
+                                         else 'configs/clinical.default.yaml'))
+    if args.command == 'analyze-rwe':
+        from .rwe import analyze_rwe, load_rwe_config, RweFailure
+        try:
+            result = analyze_rwe(args.patient_id, config, load_rwe_config(config.resolve(Path(args.rwe_config))))
+            print(json.dumps({'run_id': result.run_id, 'status': result.status,
+                              'report_paths': result.report_paths, 'stop_reason': result.stop_reason},
+                             ensure_ascii=False, indent=2))
+        except RweFailure as exc:
+            print(json.dumps({'status': 'failed', 'error': str(exc)}, ensure_ascii=False))
+            raise SystemExit(2)
+    elif args.command == 'write-narrative':
         from .narrative import write_existing_report_narrative
         print(json.dumps(write_existing_report_narrative(args.run_id, config), ensure_ascii=False, indent=2))
     elif args.command == 'audit-run':

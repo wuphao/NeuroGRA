@@ -1,0 +1,14 @@
+# RWE project schema, not patient-specific rules. No credentials belong here.
+project_id: 8
+settings_file: .env.rwe.local
+timeout_seconds: 30
+forms:
+  - {key: moca, form_id: 55, name: MOCA量表, date_field: 访视日期}
+  - {key: mmse, form_id: 56, name: MMSE量表, date_field: 访视日期}
+  - {key: faq, form_id: 57, name: FAQ量表, date_field: 访视日期}
+  - {key: cdr, form_id: 58, name: CDR量表, date_field: 访视日期}
+  - {key: adas, form_id: 59, name: ADAS量表, date_field: 访视日期}
+  - {key: demographics, form_id: 87, name: DICOM基本信息}
+  - {key: plasma, form_id: 88, name: 血浆信息, date_field: 血液采集日期}
+  - {key: apoe, form_id: 89, name: 基因风险信息, date_field: APOE检测日期}
+  - {key: csf, form_id: 90, name: 脑脊液生物标志物, date_field: 检查/采样日期}

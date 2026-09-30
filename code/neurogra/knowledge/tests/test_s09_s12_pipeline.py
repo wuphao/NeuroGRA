@@ -2,6 +2,7 @@ from __future__ import annotations
 
 import tempfile
 import unittest
+from unittest.mock import patch
 from pathlib import Path
 
 from neurogra.knowledge.config import BuildConfig
@@ -105,10 +106,32 @@ class S09S12PipelineTests(unittest.TestCase):
                     repo,
                 )
                 self.assertFalse(second_release_result.issues)
+                self.assertEqual(second_release_result.manifest, release_result.manifest)
                 self.assertEqual(repo.release_status(release_result.release_id), "active")
                 response = search(repo, "AD 源性MCI", top_k=1)
-                repo.save_parsed_document(parsed_document)
-                self.assertEqual(repo.get_spans_for_parse("parse_1"), [])
+                with patch.object(repo, "citations_for_chunk", return_value=[]):
+                    with self.assertRaisesRegex(ValueError, "release_citation_missing"):
+                        search(repo, "AD 源性MCI", top_k=1)
+                with self.assertRaisesRegex(ValueError, "published_parse_is_immutable"):
+                    repo.save_parsed_document(parsed_document)
+                self.assertEqual(len(repo.get_spans_for_parse("parse_1")), 1)
+                self.assertEqual(search(repo, "AD 源性MCI", top_k=1).hits[0].citations[0].span_id,
+                                 response.hits[0].citations[0].span_id)
+
+                index = Path(release_result.manifest.bm25_path)
+                for path, error in ((index, "release_bm25_checksum_mismatch"),
+                                    (index.parent / "chunks.jsonl", "release_corpus_checksum_mismatch")):
+                    original = path.read_bytes()
+                    path.write_bytes(original + b" ")
+                    with self.assertRaisesRegex(ValueError, error):
+                        search(repo, "AD", top_k=1)
+                    with self.assertRaisesRegex(ValueError, "published_release_checksum_mismatch"):
+                        build_release(ReleaseSelection(chunk_build_id=chunk_result.chunk_build_id), cfg, repo)
+                    path.write_bytes(original)
+
+                different = build_release(ReleaseSelection(chunk_build_id=chunk_result.chunk_build_id,
+                                                           terminology_version="local_v2"), cfg, repo)
+                self.assertNotEqual(different.release_id, release_result.release_id)
 
         self.assertEqual(response.release_id, release_result.release_id)
         self.assertEqual(len(response.hits), 1)
@@ -130,6 +153,16 @@ class S09S12PipelineTests(unittest.TestCase):
 
         self.assertEqual(result.applied_count, 0)
         self.assertEqual(result.blocked_count, 1)
+
+    def test_document_review_is_explicitly_blocked(self):
+        with tempfile.TemporaryDirectory() as tmp_dir:
+            with init_store(config(Path(tmp_dir))) as repo:
+                decision = ReviewDecision(decision_id="d", object_type="document", object_id="doc",
+                                          action="approve", reviewer_id="tester",
+                                          decided_at="2026-09-28T00:00:00Z")
+                result = apply_decisions(repo, [decision])
+                self.assertEqual(result.blocked_count, 1)
+                self.assertIn("unsupported_object_type:document", result.issues[0])
 
 
 if __name__ == "__main__":

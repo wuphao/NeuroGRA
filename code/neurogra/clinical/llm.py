@@ -63,7 +63,8 @@ class ModelGateway:
                 if failures >= self.config.transport_attempts:
                     raise ModelFailure("model_transport_failed") from exc
                 continue
-            usage = {k: response.get(k) for k in ("prompt_eval_count", "eval_count", "total_duration")}
+            usage = ({k: response.get(k) for k in ("prompt_eval_count", "eval_count", "total_duration")}
+                     if isinstance(response, dict) else {})
             try:
                 result = schema.model_validate_json(response["message"]["content"])
             except (ValidationError, KeyError, TypeError, ValueError) as exc:

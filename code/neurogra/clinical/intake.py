@@ -8,7 +8,7 @@ from .utils import dumps, fingerprint, identity, parse_time
 
 PATH_KEYS = {"路径", "报告路径", "文件路径", "附件路径"}
 CONTEXT_KEYS = {"时间", "日期", "检查日期", "评估时间", "单位", "参考范围", "方法",
-                "样本", "名称", "表格名称", "量表名称", "版本", "模态", "序列", "示踪剂", "教育校正", "语言", "检测平台"}
+                "样本", "名称", "表格名称", "量表名称", "版本", "模态", "序列", "示踪剂", "教育校正", "语言", "检测平台", "来源"}
 
 
 def resolve_asset(path_text: str, config: ClinicalConfig) -> tuple[str | None, str]:
@@ -52,6 +52,8 @@ def ingest_patient(raw: dict, config: ClinicalConfig) -> IntakeResult:
                     sequence=value.get("序列"), tracer=value.get("示踪剂"), status=status,
                     metadata={"original_path": image_path, "input_pointer": pointer}))
             for key, item in value.items():
+                if key == '来源' and isinstance(item, dict) and item.get('type') == 'rwe':
+                    continue  # Provenance lives in context, not in clinical observations.
                 escaped = key.replace("~", "~0").replace("/", "~1")
                 visit(item, pointer + "/" + escaped, context,
                       is_image or key in {"影像数据", "影像资料"})
@@ -67,6 +69,10 @@ def ingest_patient(raw: dict, config: ClinicalConfig) -> IntakeResult:
                 kind="field", locator={"json_pointer": pointer}, raw_value=value,
                 text=value if isinstance(value, str) else dumps(value), context=context,
                 content_hash=fingerprint(value))
+            source = context.get('来源')
+            if isinstance(source, dict) and source.get('type') == 'rwe' and '/原始记录/' in pointer:
+                suffix = pointer.split('/原始记录/', 1)[1]
+                record.locator['rwe'] = {**source, 'value_pointer': source['row_pointer'] + '/' + suffix}
             if key in PATH_KEYS:
                 record.parse_status = "path_metadata"
                 if isinstance(value, str):

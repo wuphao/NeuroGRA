@@ -121,10 +121,21 @@ def _split_child_text(text: str, max_tokens: int) -> list[str]:
     if count_tokens(text) <= max_tokens:
         return [text]
     sentences = re.split(r"(?<=[。！？!?；;])\s*", text)
+    bounded_sentences: list[str] = []
+    for sentence in sentences:
+        # Long paragraphs may have no sentence punctuation (tables, OCR text).
+        # Split at the same token boundaries used by count_tokens.
+        tokens = list(re.finditer(r"[A-Za-z0-9]+|[\u4e00-\u9fff]", sentence))
+        start = 0
+        for index in range(max_tokens, len(tokens), max_tokens):
+            end = tokens[index].start()
+            bounded_sentences.append(sentence[start:end])
+            start = end
+        bounded_sentences.append(sentence[start:])
     children: list[str] = []
     current: list[str] = []
     current_tokens = 0
-    for sentence in sentences:
+    for sentence in bounded_sentences:
         if not sentence:
             continue
         sentence_tokens = count_tokens(sentence)

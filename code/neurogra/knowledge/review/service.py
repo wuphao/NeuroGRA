@@ -99,6 +99,9 @@ def apply_decisions(repository: Repository, decisions: list[ReviewDecision]) -> 
                 repository.update_clause_review_status(decision.object_id, status)
                 repository.save_review_decision(decision)
                 result.applied_count += 1
+            else:
+                result.blocked_count += 1
+                result.issues.append(f"{decision.object_id}:unsupported_object_type:{decision.object_type}")
         except ValueError as exc:
             result.blocked_count += 1
             result.issues.append(str(exc))

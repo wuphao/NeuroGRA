@@ -13,12 +13,8 @@ def parse_attachment(attachment: Attachment, config: ClinicalConfig) -> ParseRes
     if attachment.status != "available" or path is None or not path.is_file():
         return ParseResult(attachment_id=attachment.attachment_id, parser="none", status="failed",
                            issues=[Issue(code="attachment_unavailable", stage="parsing", message="附件不可读取")])
-    if path.stat().st_size > config.max_attachment_bytes:
-        return ParseResult(attachment_id=attachment.attachment_id, parser="none", status="failed",
-                           issues=[Issue(code="file_too_large", stage="parsing", message="附件超过大小上限")])
     suffix = path.suffix.lower()
     result = ParseResult(attachment_id=attachment.attachment_id, parser=suffix.lstrip("."), status="ok")
-    digest = file_hash(path)
 
     def add(text, locator, context=None, raw=None):
         if len(result.segments) >= config.max_segments:
@@ -30,6 +26,10 @@ def parse_attachment(attachment: Attachment, config: ClinicalConfig) -> ParseRes
             context={**attachment.context, **(context or {})}, path=str(path), content_hash=fingerprint([digest, locator, text])))
 
     try:
+        if path.stat().st_size > config.max_attachment_bytes:
+            return ParseResult(attachment_id=attachment.attachment_id, parser="none", status="failed",
+                               issues=[Issue(code="file_too_large", stage="parsing", message="附件超过大小上限")])
+        digest = file_hash(path)
         if suffix in {".txt", ".md"}:
             result.parser = "utf8"
             for index, line in enumerate(path.read_text(encoding="utf-8-sig").splitlines(), 1):

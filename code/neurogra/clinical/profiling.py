@@ -11,11 +11,11 @@ from .storage import BudgetExceeded
 from .utils import identity, parse_time, dumps
 
 TERMS = {
-    "history": ("主诉", "病史", "既往", "家属", "用药", "记忆", "起病", "症状", "吃药", "服药", "幻觉"),
+    "history": ("主诉", "病史", "既往", "家属", "用药", "记忆", "起病", "症状", "吃药", "服药", "幻觉", "患病", "诊断"),
     "cognition": ("量表", "评估", "认知", "记忆", "moca", "mmse", "总分", "功能", "吃药", "服药", "财务"),
-    "laboratory": ("检验", "化验", "标志物", "参考范围", "血液", "血清", "血浆", "维生素", "甲状腺"),
+    "laboratory": ("检验", "化验", "标志物", "参考范围", "血液", "血清", "血浆", "维生素", "甲状腺", "脑脊液", "基因", "apoe"),
     "imaging": ("影像", "mri", "pet", "ct", "磁共振", "海马", "脑萎缩"),
-    "background": ("年龄", "性别", "教育", "语言"),
+    "background": ("年龄", "性别", "教育", "语言", "身高", "体重", "出生"),
 }
 META_KEYS = {"患者ID", "synthetic", "时间", "日期", "检查日期", "评估时间",
              "单位", "名称", "表格名称", "量表名称", "参考范围", "方法", "样本", "版本",
@@ -72,7 +72,7 @@ def profile_case(intake: IntakeResult, parsed: list[ParseResult], config: Clinic
                             issues=intake.issues + [issue for p in parsed for issue in p.issues])
     candidates = []
     for record in records:
-        key = str(record.locator.get("json_pointer", "")).rsplit("/", 1)[-1]
+        key = str(record.locator.get("json_pointer", "")).rsplit("/", 1)[-1].replace('~1', '/').replace('~0', '~')
         if key in META_KEYS or record.parse_status != "available" or record.kind == "attachment":
             snapshot.processing[record.record_id] = "metadata"
             continue

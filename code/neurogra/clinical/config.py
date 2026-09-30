@@ -3,7 +3,7 @@ from pathlib import Path
 from typing import Literal
 import yaml
 from pydantic import Field
-from .schemas import Contract
+from .schemas import Contract, TaskBudget
 
 
 class ModelConfig(Contract):
@@ -46,6 +46,8 @@ class ClinicalConfig(Contract):
     model: ModelConfig = Field(default_factory=ModelConfig)
     budget: BudgetConfig = Field(default_factory=BudgetConfig)
     max_parallel_tasks: int = Field(default=4, ge=1, le=8)
+    task_budget: TaskBudget = Field(default_factory=TaskBudget)
+    verify_narrative: bool = False
     max_attachment_bytes: int = Field(default=50_000_000, gt=0)
     max_records: int = Field(default=1000, gt=0)
     max_segments: int = Field(default=2000, gt=0)
