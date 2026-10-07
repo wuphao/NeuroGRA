@@ -1,0 +1,30 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1200" height="680" viewBox="0 0 1200 680">
+<rect width="100%" height="100%" fill="white"/>
+<text x="600" y="40" text-anchor="middle" dominant-baseline="central" font-family="Microsoft YaHei, sans-serif" font-size="34" font-weight="700" fill="#172B45">证据缺口与补偿动作</text>
+<rect x="30" y="100" width="430" height="95" rx="14" fill="#FFF7ED" stroke="#BD6A17" stroke-width="2"/>
+<text x="245.0" y="131" text-anchor="middle" dominant-baseline="central" font-family="Microsoft YaHei, sans-serif" font-size="31" font-weight="700" fill="#BD6A17">连接疑似缺失</text>
+<rect x="610" y="100" width="560" height="95" rx="14" fill="#F2F7FC" stroke="#2563A6" stroke-width="2"/>
+<text x="890.0" y="131" text-anchor="middle" dominant-baseline="central" font-family="Microsoft YaHei, sans-serif" font-size="31" font-weight="700" fill="#2563A6">合法候选与原文回查</text>
+<polyline points="460,147 610,147" fill="none" stroke="#BD6A17" stroke-width="3" stroke-linejoin="round"/>
+<polygon points="610,147 597.0,141.0 597.0,153.0" fill="#BD6A17"/>
+<rect x="30" y="225" width="430" height="95" rx="14" fill="#FFF7ED" stroke="#BD6A17" stroke-width="2"/>
+<text x="245.0" y="256" text-anchor="middle" dominant-baseline="central" font-family="Microsoft YaHei, sans-serif" font-size="31" font-weight="700" fill="#BD6A17">实体尚未入图</text>
+<rect x="610" y="225" width="560" height="95" rx="14" fill="#F2F7FC" stroke="#2563A6" stroke-width="2"/>
+<text x="890.0" y="256" text-anchor="middle" dominant-baseline="central" font-family="Microsoft YaHei, sans-serif" font-size="31" font-weight="700" fill="#2563A6">来源发现与身份对齐</text>
+<polyline points="460,272 610,272" fill="none" stroke="#BD6A17" stroke-width="3" stroke-linejoin="round"/>
+<polygon points="610,272 597.0,266.0 597.0,278.0" fill="#BD6A17"/>
+<rect x="30" y="350" width="430" height="95" rx="14" fill="#FFF7ED" stroke="#BD6A17" stroke-width="2"/>
+<text x="245.0" y="381" text-anchor="middle" dominant-baseline="central" font-family="Microsoft YaHei, sans-serif" font-size="31" font-weight="700" fill="#BD6A17">必要条件不完整</text>
+<rect x="610" y="350" width="560" height="95" rx="14" fill="#F2F7FC" stroke="#2563A6" stroke-width="2"/>
+<text x="890.0" y="381" text-anchor="middle" dominant-baseline="central" font-family="Microsoft YaHei, sans-serif" font-size="31" font-weight="700" fill="#2563A6">依赖展开与上下文补查</text>
+<polyline points="460,397 610,397" fill="none" stroke="#BD6A17" stroke-width="3" stroke-linejoin="round"/>
+<polygon points="610,397 597.0,391.0 597.0,403.0" fill="#BD6A17"/>
+<rect x="30" y="475" width="430" height="95" rx="14" fill="#FFF7ED" stroke="#BD6A17" stroke-width="2"/>
+<text x="245.0" y="506" text-anchor="middle" dominant-baseline="central" font-family="Microsoft YaHei, sans-serif" font-size="31" font-weight="700" fill="#BD6A17">本地来源仍不足</text>
+<rect x="610" y="475" width="560" height="95" rx="14" fill="#F2F7FC" stroke="#2563A6" stroke-width="2"/>
+<text x="890.0" y="506" text-anchor="middle" dominant-baseline="central" font-family="Microsoft YaHei, sans-serif" font-size="31" font-weight="700" fill="#2563A6">受控外部检索或保留缺口</text>
+<polyline points="460,522 610,522" fill="none" stroke="#BD6A17" stroke-width="3" stroke-linejoin="round"/>
+<polygon points="610,522 597.0,516.0 597.0,528.0" fill="#BD6A17"/>
+<text x="600" y="620" text-anchor="middle" dominant-baseline="central" font-family="Microsoft YaHei, sans-serif" font-size="28" font-weight="400" fill="#51667B">来源冲突分离核对  上下文容量不足优先重组证据</text>
+<text x="600" y="657" text-anchor="middle" dominant-baseline="central" font-family="Microsoft YaHei, sans-serif" font-size="28" font-weight="400" fill="#51667B">所有新增内容先核验  剩余未知不转为否定事实</text>
+</svg>

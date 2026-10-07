@@ -1,0 +1,33 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1200" height="550" viewBox="0 0 1200 550">
+<rect width="100%" height="100%" fill="white"/>
+<text x="600" y="38" text-anchor="middle" dominant-baseline="central" font-family="Microsoft YaHei, sans-serif" font-size="34" font-weight="700" fill="#172B45">候选与证据的状态转换</text>
+<rect x="30" y="115" width="350" height="120" rx="14" fill="#FFF7ED" stroke="#BD6A17" stroke-width="2"/>
+<text x="205.0" y="146" text-anchor="middle" dominant-baseline="central" font-family="Microsoft YaHei, sans-serif" font-size="30" font-weight="700" fill="#BD6A17">运行时探索候选</text>
+<text x="205.0" y="179.0" text-anchor="middle" dominant-baseline="central" font-family="Microsoft YaHei, sans-serif" font-size="27" font-weight="400" fill="#172B45">关系与实体候选ID</text>
+<text x="205.0" y="210.0" text-anchor="middle" dominant-baseline="central" font-family="Microsoft YaHei, sans-serif" font-size="27" font-weight="400" fill="#172B45">保留目标需求和范围</text>
+<rect x="425" y="115" width="350" height="120" rx="14" fill="#F2F7FC" stroke="#2563A6" stroke-width="2"/>
+<text x="600.0" y="146" text-anchor="middle" dominant-baseline="central" font-family="Microsoft YaHei, sans-serif" font-size="30" font-weight="700" fill="#2563A6">原始来源核验</text>
+<text x="600.0" y="179.0" text-anchor="middle" dominant-baseline="central" font-family="Microsoft YaHei, sans-serif" font-size="27" font-weight="400" fill="#172B45">定位与关系语义</text>
+<text x="600.0" y="210.0" text-anchor="middle" dominant-baseline="central" font-family="Microsoft YaHei, sans-serif" font-size="27" font-weight="400" fill="#172B45">范围与解释上下文</text>
+<rect x="820" y="115" width="350" height="120" rx="14" fill="#F2F7FC" stroke="#267A59" stroke-width="2"/>
+<text x="995.0" y="146" text-anchor="middle" dominant-baseline="central" font-family="Microsoft YaHei, sans-serif" font-size="30" font-weight="700" fill="#267A59">来源支持的证据池</text>
+<text x="995.0" y="179.0" text-anchor="middle" dominant-baseline="central" font-family="Microsoft YaHei, sans-serif" font-size="27" font-weight="400" fill="#172B45">可用于本次引用回答</text>
+<text x="995.0" y="210.0" text-anchor="middle" dominant-baseline="central" font-family="Microsoft YaHei, sans-serif" font-size="27" font-weight="400" fill="#172B45">保留来源与审核状态</text>
+<polyline points="380,175 425,175" fill="none" stroke="#BD6A17" stroke-width="3" stroke-linejoin="round"/>
+<polygon points="425,175 412.0,169.0 412.0,181.0" fill="#BD6A17"/>
+<polyline points="775,175 820,175" fill="none" stroke="#267A59" stroke-width="3" stroke-linejoin="round"/>
+<polygon points="820,175 807.0,169.0 807.0,181.0" fill="#267A59"/>
+<rect x="425" y="335" width="350" height="120" rx="14" fill="#F5F6F8" stroke="#748291" stroke-width="2"/>
+<text x="600.0" y="366" text-anchor="middle" dominant-baseline="central" font-family="Microsoft YaHei, sans-serif" font-size="30" font-weight="700" fill="#748291">反驳 冲突或未知</text>
+<text x="600.0" y="399.0" text-anchor="middle" dominant-baseline="central" font-family="Microsoft YaHei, sans-serif" font-size="27" font-weight="400" fill="#172B45">保留证据或失败原因</text>
+<text x="600.0" y="430.0" text-anchor="middle" dominant-baseline="central" font-family="Microsoft YaHei, sans-serif" font-size="27" font-weight="400" fill="#172B45">不充当肯定支持</text>
+<rect x="820" y="335" width="350" height="120" rx="14" fill="#F2F7FC" stroke="#267A59" stroke-width="2"/>
+<text x="995.0" y="366" text-anchor="middle" dominant-baseline="central" font-family="Microsoft YaHei, sans-serif" font-size="30" font-weight="700" fill="#267A59">审核后更新正式图谱</text>
+<text x="995.0" y="399.0" text-anchor="middle" dominant-baseline="central" font-family="Microsoft YaHei, sans-serif" font-size="27" font-weight="400" fill="#172B45">正式发布独立执行</text>
+<text x="995.0" y="430.0" text-anchor="middle" dominant-baseline="central" font-family="Microsoft YaHei, sans-serif" font-size="27" font-weight="400" fill="#172B45">随后更新索引与向量</text>
+<polyline points="600,235 600,335" fill="none" stroke="#748291" stroke-width="3" stroke-linejoin="round"/>
+<polygon points="600,335 606.0,322.0 594.0,322.0" fill="#748291"/>
+<polyline points="995,235 995,335" fill="none" stroke="#267A59" stroke-width="3" stroke-linejoin="round" stroke-dasharray="10 8"/>
+<polygon points="995,335 1001.0,322.0 989.0,322.0" fill="#267A59"/>
+<text x="600" y="510" text-anchor="middle" dominant-baseline="central" font-family="Microsoft YaHei, sans-serif" font-size="28" font-weight="400" fill="#51667B">预测分数不能代替原文核验  查询回答不自动发布新知识</text>
+</svg>

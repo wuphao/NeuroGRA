@@ -1,0 +1,216 @@
+{
+  "validated_date": "2026-10-03",
+  "mysql_version": "8.0.41",
+  "scope": "SQL/index and transaction experiments only; no crash/replication benchmark",
+  "cases": [
+    {
+      "case": "setup",
+      "passed": true,
+      "details": {
+        "version": "8.0.41",
+        "orders": 100000
+      }
+    },
+    {
+      "case": "feed_index_and_keyset",
+      "passed": true,
+      "details": {
+        "before": [
+          [
+            1,
+            "SIMPLE",
+            "orders",
+            null,
+            "ref",
+            "idx_user",
+            "idx_user",
+            "8",
+            "const",
+            1000,
+            10.0,
+            "Using where; Using filesort"
+          ]
+        ],
+        "after": [
+          [
+            1,
+            "SIMPLE",
+            "orders",
+            null,
+            "ref",
+            "idx_user,idx_feed_cover",
+            "idx_feed_cover",
+            "9",
+            "const,const",
+            250,
+            100.0,
+            "Using index"
+          ]
+        ],
+        "analyze": [
+          [
+            "-> Limit: 20 row(s)  (cost=27.2 rows=20) (actual time=0.0314..0.0349 rows=20 loops=1)\n    -> Covering index lookup on orders using idx_feed_cover (user_id=42, status=1)  (cost=27.2 rows=250) (actual time=0.0306..0.0333 rows=20 loops=1)\n"
+          ]
+        ],
+        "first_page_size": 20,
+        "second_page_size": 20
+      }
+    },
+    {
+      "case": "mvcc_READ_COMMITTED",
+      "passed": true,
+      "details": [
+        100,
+        200,
+        210
+      ]
+    },
+    {
+      "case": "mvcc_REPEATABLE_READ",
+      "passed": true,
+      "details": [
+        100,
+        100,
+        210
+      ]
+    },
+    {
+      "case": "begin_does_not_create_read_view",
+      "passed": true,
+      "details": 300
+    },
+    {
+      "case": "missing_unique_gap_lock",
+      "passed": true,
+      "details": {
+        "locks": [
+          [
+            null,
+            "TABLE",
+            "IX",
+            "GRANTED",
+            null
+          ],
+          [
+            "PRIMARY",
+            "RECORD",
+            "X,GAP",
+            "GRANTED",
+            "20"
+          ]
+        ],
+        "insert_12": 1205,
+        "update_20": "allowed",
+        "insert_25": "allowed"
+      }
+    },
+    {
+      "case": "existing_unique_record_lock",
+      "passed": true,
+      "details": {
+        "insert_12": "allowed",
+        "update_20": 1205
+      }
+    },
+    {
+      "case": "nonunique_secondary_lock",
+      "passed": true,
+      "details": {
+        "locks": [
+          [
+            null,
+            "TABLE",
+            "IX",
+            "GRANTED",
+            null
+          ],
+          [
+            "idx_k",
+            "RECORD",
+            "X,GAP",
+            "GRANTED",
+            "3, 40"
+          ],
+          [
+            "idx_k",
+            "RECORD",
+            "X",
+            "GRANTED",
+            "2, 20"
+          ],
+          [
+            "idx_k",
+            "RECORD",
+            "X",
+            "GRANTED",
+            "2, 30"
+          ],
+          [
+            "PRIMARY",
+            "RECORD",
+            "X,REC_NOT_GAP",
+            "GRANTED",
+            "20"
+          ],
+          [
+            "PRIMARY",
+            "RECORD",
+            "X,REC_NOT_GAP",
+            "GRANTED",
+            "30"
+          ]
+        ],
+        "insert_k2": 1205
+      }
+    },
+    {
+      "case": "gap_locks_can_coexist",
+      "passed": true,
+      "details": true
+    },
+    {
+      "case": "lost_update_vs_atomic_update",
+      "passed": true,
+      "details": {
+        "literal_update_final": 110,
+        "atomic_update_final": 120
+      }
+    },
+    {
+      "case": "rr_write_skew",
+      "passed": true,
+      "details": {
+        "on_call_final": 0
+      }
+    },
+    {
+      "case": "skip_locked",
+      "passed": true,
+      "details": [
+        [
+          2
+        ],
+        [
+          3
+        ]
+      ]
+    },
+    {
+      "case": "unique_idempotency",
+      "passed": true,
+      "details": {
+        "duplicate_error": 1062
+      }
+    },
+    {
+      "case": "deadlock",
+      "passed": true,
+      "details": {
+        "session_a": 1213,
+        "session_b": [
+          "completed"
+        ]
+      }
+    }
+  ]
+}
