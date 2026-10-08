@@ -7,7 +7,7 @@
 
 本版采用已经确认的思路：**先把知识内容组织成可读、可查询的节点和边，再通过独立的来源主张节点关联到文档与原文。** 主图默认只展示知识层，来源层按需展开。构建时仍同步保存来源映射，不在知识汇整时丢弃出处。
 
-这是独立的新文档。[上一版设计](D:/PYTHON/NeuroGRA/NeuroGRA/docs/知识图谱设计/NeuroGRA_知识图谱与Ontology设计.md)保留；涉及本版节点、边和分层方式时，以本文的契约为准。医学内容依据继续使用[诊断入门综述](D:/PYTHON/NeuroGRA/NeuroGRA/docs/reviews/神经退行性疾病诊断入门综述.md)与[原始文献目录](D:/PYTHON/NeuroGRA/NeuroGRA/docs/references/neurodegenerative_diagnosis_20261003/README_文献目录.md)。
+本文统一维护节点、边和分层契约；旧 Ontology v0.2 说明已清理，不再并行维护另一套 schema。医学内容依据继续使用[诊断入门综述](../reviews/神经退行性疾病诊断入门综述.md)与[原始文献目录](../references/neurodegenerative_diagnosis_20261003/README_文献目录.md)。
 
 ## 1. 总体结构和设计原则
 
@@ -566,7 +566,7 @@ D05 的 dependency_type 为 cites / secondary_report_of / same_study_as / supers
 
 ## 8. 完整结构样例：DLB 的核心特征角色
 
-以下为结构示例，依据[DLB 2017 原始共识](D:/PYTHON/NeuroGRA/NeuroGRA/docs/references/neurodegenerative_diagnosis_20261003/07_DLB_2017_McKeith_Fourth_Consensus.pdf)。名称是释义，ID 为示例；未在本文伪造精确引文和偏移。发布时必须从本地固定文档的原文实际定位。
+以下为结构示例，依据[DLB 2017 原始共识](../references/neurodegenerative_diagnosis_20261003/07_DLB_2017_McKeith_Fourth_Consensus.pdf)。名称是释义，ID 为示例；未在本文伪造精确引文和偏移。发布时必须从本地固定文档的原文实际定位。
 
 ### 8.1 本样例有哪些节点
 
@@ -789,3 +789,31 @@ Ontology 首期体现为类型注册表、谓词端点表、字段字典、条�
 主图先回答“知识是什么、怎样连接”，展开来源后回答“哪个字段或关系由谁提出、来自哪篇文档哪段文字”。医学边通过 KnowledgeStatement 获得独立身份，因此不只能够追溯节点，也能追溯关系和规则。
 
 相对于丢失这些限定的扁平实体关联图，该结构能保留解释神经退行性疾病诊断所需的信息。是否在检索效果上优于保留同样信息的文本或增强图方法，继续按上一版的公平对照方案验证，不因分层设计就预先宣布优势。
+
+
+## 14 领域能力问题与工程扩展边界
+
+以下能力问题保留旧设计的领域验收范围；右列名称是职责提示，不新增核心类型。Concept/Assertion 按本版映射到 Concept、KnowledgeStatement 和 SourceAssertion；时间与分布模式按本版约束表示，Study、病例观测和运行结论属于工程扩展。
+
+| 编号 | 能力问题 | 必需结构 |
+|---|---|---|
+| CQ01 | 关于某疾病、表型或检查，文献具体提出了哪些主张？ | Concept、Assertion、参与角色 |
+| CQ02 | 每项主张能回到哪个版本的哪页哪段原文？ | DocumentVersion、SourceSpan、EvidenceRef |
+| CQ03 | 主张适用于什么人群、方法、比较对象、结局和时间？哪些信息未知？ | Scope、字段状态、字段证据 |
+| CQ04 | 两项主张是互补、条件不同，还是可比条件下存在分歧？ | ComparisonAssessment、比较维度、依据 |
+| CQ05 | 多份报告是否来自同一研究？是否存在二次引用？ | Study、报告关系、来源依赖 |
+| CQ06 | 一个检查的测量对象、结果模式和诊断意义能否分别查询？ | MeasurementDefinition、FindingPattern、诊断主张 |
+| CQ07 | 文献条件中有哪些 AND、OR、例外或未解析部分？ | Condition AST、解析状态 |
+| CQ08 | 给定知识库 release，能否重建当时的证据和术语映射？ | 不可变修订、发布清单 |
+| CQ09 | 本次回答缺少哪个问题要素的证据？ | Need、EvidenceUnit、任务覆盖状态 |
+| CQ10 | 病例模式中，结论依赖哪些真实观测，哪些适用条件仍不清楚？ | Observation、ApplicabilityAssessment、CaseConclusion |
+| CQ11 | 相同体征在不同起病顺序或病程窗口下，诊断角色为什么不同？ | TemporalPattern、CriterionBinding、框架版本 |
+| CQ12 | 多个异常属于同一区域还是不同区域？怎样满足区域组合要求？ | DistributionPattern、变量绑定、去重计数 |
+| CQ13 | 某表现是前提、核心、支持、警示还是排除项？这个角色适用于哪个类别？ | CriterionBinding、DiagnosticCategory |
+| CQ14 | 临床把握度、功能严重程度和生物学阶段能否分别回答？ | 诊断类别、多轴 StageScheme、FunctionalState |
+| CQ15 | 某指标说明目标病理、一般损伤还是某种功能异常？能否用于分流或确认？ | MeasurementDefinition、DiagnosticUse |
+| CQ16 | 某条证据为何不能区分两个候选？是共享表现、方法问题还是信息缺失？ | DifferentialQuestionDefinition、逐维比较、GapRecord |
+| CQ17 | 多病理共存有依据，还是只是不能区分？是否已能解释各自贡献？ | 多轴结果、来源主张、AttributionAssessment |
+| CQ18 | 一项标准条目有哪些子定义、时间窗和例外？是否检索到了完整定义？ | ConstraintClosure、条目版本、字段证据 |
+
+关系来源不能由节点来源替代；框架版本、否定、角色、时间/区域约束和检查用途分别保留。来源、可检索结构与患者运行记录独立建模。外部生物医学图谱只提供术语与背景参考，不能把关联路径直接当作诊断依据。参考实现见 [OptimusKG 解读](../知识图谱项目解读/OptimusKG_项目实现与知识图谱结构解读.md)和 [RTX-KG2 解读](../知识图谱项目解读/RTX-KG2_项目实现与知识图谱结构解读.md)。

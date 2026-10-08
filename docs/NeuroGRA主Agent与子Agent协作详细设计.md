@@ -1,28 +1,28 @@
 # NeuroGRA 主 Agent 与子 Agent 协作主流程详细设计（V1）
 
-实施顺序、各步输入输出与验收见[《NeuroGRA 主 Agent 实施步骤与执行计划》](NeuroGRA主Agent实施步骤与执行计划.md)。
+运行入口见 [RWE 运行说明](RWE患者ID到可追溯报告运行说明.md)和 [Web 工作台](Web工作台运行说明.md)。本文维护在线架构、现有实现、复查约束及剩余任务，旧实施计划和分批交付记录已删除。
 
-更新日期：2026-09-23。本文为实施设计，尚不代表在线 Agent、模型工具及检索闭环已经实现。
+更新日期：2026-10-08。病史、认知、检验、影像报告 Agent 及文本复查/报告流程已有实现；DiaMond 真实分类一致性仍受阻。本文中的目标设计不自动代表所有字段、医学规则和模型能力已经实现。
 
 ## 1 目标、约定与现有代码边界
 
 本文按当前需求确定 NeuroGRA 的在线架构：一个主 Agent 接收患者资料，根据实际内容调用不同子 Agent；子 Agent 可调用共享知识图谱、向量库及专业工具；主 Agent 检查各子 Agent 结果，对不确定、明显错误或互相矛盾的内容发起定向交互，最后由主 Agent 汇总结果。
 
-本文作为在线工程实施口径。[《总结设计》](总结设计.md)第三部分的“综合分析智能体”由主 Agent 承担；该文第四部分的证据状态复核由主 Agent 的复查阶段和确定性校验器共同执行。首期不再另设独立的综合 Agent 和复核 Agent，以免职责重叠。未来可以将某项复核委托给独立角色，但最终状态、预算和报告仍由主 Agent 控制。
+本文作为在线工程实施口径。[《总体设计》](总体设计.md)第三部分的“综合分析智能体”由主 Agent 承担；该文第四部分的证据状态复核由主 Agent 的复查阶段和确定性校验器共同执行。首期不再另设独立的综合 Agent 和复核 Agent，以免职责重叠。未来可以将某项复核委托给独立角色，但最终状态、预算和报告仍由主 Agent 控制。
 
-外部患者数据只要求患者ID，其余键通常为中文、内容与层级不固定。未知患者是否填写量表，也不预设可用检查。内部 ID、任务状态、版本和来源引用由系统生成，不要求患者提供。《总结设计》附录 A 的病例字段清单是研究资料收集目标，不是在线接口必填表单。
+外部患者数据只要求患者ID，其余键通常为中文、内容与层级不固定。未知患者是否填写量表，也不预设可用检查。内部 ID、任务状态、版本和来源引用由系统生成，不要求患者提供。《总体设计》附录 A 的病例字段清单是研究资料收集目标，不是在线接口必填表单。
 
 实施目标是打通真实调用链，不等待完美知识图谱、向量检索、完整条件推理和全部影像工具。模拟实现只能用于开发与测试；真实运行必须标明未实现、不可用和失败的能力，不能用模拟证据替代检索结果。
 
 | 能力 | 本地核查现状 | V1 处理 |
 |---|---|---|
 | 文本查询 | `knowledge/retrieval/service.py` 提供 BM25 查询 | 复用，转换成共享检索返回结构 |
-| 图谱 | 已有 Neo4j 写入；当前抽取主要为术语共现 | 新增只读查询适配器，图边主要用于找到原文 |
-| 向量检索 | 当前查询服务未接入向量分支 | 预留并逐步实现适配器；未配置时明确降级 |
-| 在线主/子 Agent | 本次设计拟新增 | 用统一结构化模型调用接口实现 |
+| 图谱 | 已有 Neo4j 写入和只读查询适配；当前抽取仍包含术语共现 | 图边用于定位原文，v0.3 语义结构仍待迁移 |
+| 向量检索 | 已有 BGE-M3 索引、版本绑定与融合适配 | 服务、索引或发布不匹配时明确降级 |
+| 在线主/子 Agent | 已实现四专业、复查、分批处理和报告 | 统一结构化模型调用，受来源、预算与版本约束 |
 | DiaMond | 存在训练权重、原始影像与 HDF5 推理脚本 | 封装为影像 Agent 的受控工具，验证后启用 |
 
-本设计未执行 DiaMond 推理，未验证权重内部内容、推理一致性或临床效果；下文区分源码已确认事实与接入前待验证项。
+适配器、环境探测与模型权重加载已有实现；raw 预处理、RegBN 构造及训练状态恢复仍阻止真实分类一致性验收，默认 blocked_validation。下文的能力要求不能替代该验收。
 
 ## 2 总体结构与责任边界
 
@@ -304,10 +304,10 @@ V1 默认最多 2 轮复查，每个子 Agent 初次分析最多 3 次模型调�
 
 ### 9.1 已核查的实际入口
 
-外部项目：`D:/Python Project/DiaMond/DiaMond`。
+外部项目位置由 `configs/clinical.default.yaml` 的 `diamond.repo_root` 指定；它是本地独立依赖，不要求随主仓库提交。
 
-- 原始影像入口：[predict_diamond_raw.py](../../DiaMond/DiaMond/tools/predict_diamond_raw.py)。接受 --mri、--pet、--checkpoint、--output-csv、--device；支持 SimpleITK 可读影像文件及 DICOM 序列目录。
-- HDF5 入口：[predict_diamond.py](../../DiaMond/DiaMond/tools/predict_diamond.py)。读取 MRI/T1/data 和 PET/FDG/data；原始病例路径优先走 raw 入口。
+- 原始影像入口：`tools/predict_diamond_raw.py`。接受 --mri、--pet、--checkpoint、--output-csv、--device；支持 SimpleITK 可读影像文件及 DICOM 序列目录。
+- HDF5 入口：`tools/predict_diamond.py`。读取 MRI/T1/data 和 PET/FDG/data；原始病例路径优先走 raw 入口。
 - 已存在 split0～split4 的 bestval/latest 权重。首期配置明确固定一个 checkpoint，记录哈希，不按文件时间自动挑选，不默认进行五折集成。
 - 同目录 _hyperparams.yaml 当前 class_num=3、modality=multi、img_size=128，with_mri/with_pet 均为 true。
 - raw 脚本实际要求 MRI 和 PET 两种输入，非 multi 会报错。命令行列出 mono 选项不等于已支持单模态推理。
@@ -429,28 +429,17 @@ async def analyze_patient(patient_input, config):
 ## 12 代码模块与接口
 
 ```text
-code/neurogra/
-├─ knowledge/                    # 复用现有离线知识与查询模块
-└─ clinical/
-   ├─ schemas/                   # 患者、任务、结果、复查、报告契约
-   ├─ intake/                    # 中文任意字段、附件、路径和原文快照
-   ├─ parsing/                   # 文本/表格/报告及影像元数据适配
-   ├─ profiling/                 # 资料分类、事实提取、时间线与盘点
-   ├─ orchestration/             # 状态机、动作执行器、预算、并发、恢复
-   ├─ agents/
-   │  ├─ main.py                 # 规划、复查、交互和最终汇总
-   │  ├─ history.py
-   │  ├─ cognition.py
-   │  ├─ laboratory.py
-   │  └─ imaging.py
-   ├─ retrieval/                 # BM25/Neo4j/vector 统一接口
-   ├─ tools/diamond.py            # 独立环境推理封装
-   ├─ validation/                # 事实、引用、工具和最终结果校验
-   ├─ llm/                       # 结构化模型响应、重试和调用记录
-   ├─ storage/                   # 任务、版本、依赖与事件存储
-   ├─ reporting/                 # 中文报告模板
-   └─ cli.py                     # 首期单病例入口
+code/neurogra/clinical/
+├─ schemas.py / intake.py / parsing.py / profiling.py
+├─ orchestration.py / workflow.py / batching.py
+├─ history.py / specialists.py / imaging.py
+├─ retrieval.py / retrieval_worker.py / vector.py
+├─ diamond.py / diamond_probe_worker.py / diamond_input_worker.py
+├─ llm.py / storage.py / narrative.py / acceptance.py
+└─ cli.py / rwe.py / rwe_login.py / web.py
 ```
+
+现有实现采用平铺模块，职责表中的名称表示逻辑职责，不要求存在同名子包。
 
 | 模块 | 输入 | 输出 |
 |---|---|---|
@@ -463,7 +452,7 @@ code/neurogra/
 | MainAgent.synthesize | 已处理问题的 CaseState | FinalReport 草案 |
 | validation/reporting | 报告草案与真实引用对象 | 校验后的 JSON 与 Markdown |
 
-首期 CLI 拟定：`python -m neurogra.clinical.cli analyze --patient <病例.json> --config <运行.yaml>`。Python 入口拟定：`analyze_patient(patient: dict, config: ClinicalConfig) -> RunResult`。这两项目前为待实现接口，不能当成现有可执行命令。
+现有 CLI：`python -m neurogra.clinical.cli --config configs/clinical.default.yaml analyze --patient <病例.json>`。Python 入口位于 `workflow.py` 的 `analyze_patient(raw, config)`；RWE 和 Web 使用同一临床流程。
 
 配置放 configs/clinical.default.yaml，包含 model_provider/model、enabled_agents、knowledge_release_id、backend 开关、预算、路径根目录、DiaMond 的 repo_root/python_executable/checkpoint/device 和配对策略。模型凭据从环境读取，不出现在患者数据或报告中。模型推理走本地服务还是外部服务由部署配置明确。
 
@@ -503,3 +492,31 @@ code/neurogra/
 工程指标：正确路由率、原始资料覆盖率、引用可定位率、结构合法率、复查解决率、错误保留率、无效重复调用率、耗时和资源消耗。医学质量另以独立人工标注病例评价；流程成功率和工具可运行不等于诊断准确率。
 
 主流程完成的最小定义：输入一份实际中文病例 → 主 Agent 根据真实资料调度 → 子 Agent 调用可用检索/工具 → 主 Agent 定向复查 → 修正或明确保留未决 → 输出双重来源可追踪的报告。知识检索暂不完美可以如实降级，但不能用未实现能力冒充真实执行。
+
+
+## 15 现行复查约束与剩余任务
+
+本节汇入旧证据状态复核设计和实施计划中仍有效的约束。以下为设计与验收要求，现有确定性校验和模型复查并不保证完整医学语义判定。
+
+对每项候选结论分别记录支持、削弱/限制、知识缺口、患者资料缺口、可比冲突、引用/层级/版本问题和未覆盖需求。条款条件的满足、不满足、未知，与证据允许用途分开保存；未知条件不能直接支持肯定结论，没有支持也不等于存在反证。
+
+| 问题 | 允许动作与结束条件 |
+| --- | --- |
+| 医学知识或条款定义缺失 | 在原预算内检索及补读来源，条件和例外完整且可定位才算覆盖。 |
+| 患者条件未知 | 只查已有真实记录；记录不存在则保留待补项，不能用文献补造患者结果。 |
+| 证据似乎冲突 | 先核对主体、字段、层级、时间、方法、单位和范围；不同时间及不同维度不自动互相否定。 |
+| 引用不支持具体表述 | 缩小表述、替换依据或撤回主张；不能只凭引用对象存在判为支持。 |
+| 版本或结论层级错误 | 核对有效版本、用途和允许强度，避免从症候群跨到病理、从未记录跨到排除。 |
+
+复查请求应绑定目标结果版本、主张和触发依据，明确问题、允许动作、禁止推断和成功条件。优先处理患者事实错误、条件误用和来源不支持，再处理可比冲突、关键知识缺口及一般补充。无真实资料源可查时登记未决，不反复搜索文献。
+
+新增知识需要与原候选去重并重新组织上下文，必要条件和已知可比分歧两侧均计入预算；不能无限追加内容。所有角色共享累计调用、时间和上下文预算，重复请求和无有效变化停止。主张按患者原始资料和医学来源分别追溯；无法核实的解释保留条件或撤回。
+
+当前代码已包含四类专业 Agent、分批分析及复查、向量融合、准备阶段恢复、报告依赖和依据核对。历史测试数量不再作为当前验收数量，重新验收时记录命令、代码版本和实际结果。
+
+仍需完成：
+
+1. DiaMond raw 输入维度与预处理核验、RegBN 构造和训练状态恢复、标签映射及重复性对照；通过前保持 blocked_validation，不标影像分类已完成。
+2. DICOM 的显式序列选择与转换，不能默认拿切片最多序列当作已验证输入。
+3. v0.3 图谱迁移、条件适用性求值及 v1.0 候选探索/完整证据选择。它们是待实现研究内容，不能由基础图查询或临床工作流验收替代。
+4. 固定知识、病例和预算下的独立医学标注及效果评价；流程完成、协议检查和模型自评均不能替代临床质量评估。

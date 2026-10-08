@@ -53,3 +53,14 @@ temp/
 
 # Private clinical reports
 docs/病例报告/
+
+# Local upstream GitHub repositories (keep source locally)
+/OptimusKG/
+/RAG-Anything/
+/RTX-KG2/
+
+# Generated Python package metadata
+*.egg-info/
+
+# Office temporary lock files
+~$*
