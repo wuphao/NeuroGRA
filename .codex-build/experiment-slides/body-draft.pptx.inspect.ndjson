@@ -1,0 +1,126 @@
+{"kind":"deck","id":"pr/fw51wf","name":"Deck"}
+{"kind":"layout","layoutId":"308ec941-15ca-4a2e-8f73-da4798759cf7","name":"Master","type":"master"}
+{"kind":"layout","layoutId":"894f7158-e287-4014-81e6-7cda04b5a9c5","name":"Title Slide","type":"title"}
+{"kind":"slide","id":"sl/768stg","slide":1,"title":"实验数据与总体实验","textShapes":20}
+{"kind":"textbox","id":"sh/18fedgfu","slide":1,"name":"text-1","text":"实验数据与总体实验","textPreview":"实验数据与总体实验","textChars":9,"textLines":1,"bbox":[27,94,1180,40]}
+{"kind":"shape","id":"sh/elofi1g3","slide":1,"name":"surface-2","bbox":[24,150,575,482]}
+{"kind":"shape","id":"sh/fmxwb6xo","slide":1,"name":"surface-3","bbox":[25,151,573,50]}
+{"kind":"textbox","id":"sh/sj6xgbyx","slide":1,"name":"text-4","text":"01","textPreview":"01","textChars":2,"textLines":1,"bbox":[39,157,46,34]}
+{"kind":"textbox","id":"sh/tkfe9gfi","slide":1,"name":"text-5","text":"实验数据与标注","textPreview":"实验数据与标注","textChars":7,"textLines":1,"bbox":[97,157,486,34]}
+{"kind":"shape","id":"sh/6h4fe1g7","slide":1,"name":"surface-6","bbox":[617,150,639,482]}
+{"kind":"shape","id":"sh/ridw76xc","slide":1,"name":"surface-7","bbox":[618,151,637,50]}
+{"kind":"textbox","id":"sh/cfqxsvyh","slide":1,"name":"text-8","text":"02","textPreview":"02","textChars":2,"textLines":1,"bbox":[632,157,46,34]}
+{"kind":"textbox","id":"sh/dgzyl0fm","slide":1,"name":"text-9","text":"总体实验框架","textPreview":"总体实验框架","textChars":6,"textLines":1,"bbox":[690,157,550,34]}
+{"kind":"textbox","id":"sh/hcjy14bi","slide":1,"name":"text-10","text":"AD/MCI 辅助诊断，主任务为 CN / MCI / AD 三分类","textPreview":"AD/MCI 辅助诊断，主任务为 CN / MCI / AD 三分类","textChars":34,"textLines":1,"bbox":[43,210,534,27]}
+{"kind":"textbox","id":"sh/vahgzutc","slide":1,"name":"text-11","text":"报告金标准：计划选取 60–100 个病例子集","textPreview":"报告金标准：计划选取 60–100 个病例子集","textChars":23,"textLines":1,"bbox":[44,493,530,29]}
+{"kind":"textbox","id":"sh/u98fqpsr","slide":1,"name":"text-12","text":"按患者 ID 划分，同一患者访视不跨集合\n仅使用当前及既往记录，固定知识语料版本","textPreview":"按患者 ID 划分，同一患者访视不跨集合 | 仅使用当前及既往记录，固定知识语料版本","textChars":40,"textLines":2,"bbox":[44,535,532,67]}
+{"kind":"shape","id":"sh/t8zyxkb6","slide":1,"name":"surface-13","bbox":[651,211,570,64]}
+{"kind":"textbox","id":"sh/87qxofal","slide":1,"name":"text-14","text":"患者病例数据 + 医学知识文档","textPreview":"患者病例数据 + 医学知识文档","textChars":15,"textLines":1,"bbox":[661,221,550,28]}
+{"kind":"shape","id":"sh/76hgvatg","slide":1,"name":"text-15","bbox":[661,254,550,15]}
+{"kind":"shape","id":"sh/658fm5sv","slide":1,"name":"surface-16","bbox":[651,306,270,86]}
+{"kind":"textbox","id":"sh/d43y9obq","slide":1,"name":"text-17","text":"实验一：知识构建","textPreview":"实验一：知识构建","textChars":8,"textLines":1,"bbox":[661,316,250,28]}
+{"kind":"textbox","id":"sh/c3uh0ja5","slide":1,"name":"text-18","text":"条件及来源是否完整","textPreview":"条件及来源是否完整","textChars":9,"textLines":1,"bbox":[661,349,250,37]}
+{"kind":"shape","id":"sh/c72hcni1","slide":1,"name":"surface-19","bbox":[951,306,270,86]}
+{"kind":"textbox","id":"sh/x8bi5sjm","slide":1,"name":"text-20","text":"实验二：检索与补查","textPreview":"实验二：检索与补查","textChars":9,"textLines":1,"bbox":[961,316,250,28]}
+{"kind":"textbox","id":"sh/a50zad0b","slide":1,"name":"text-21","text":"证据是否适用、缺口是否补齐","textPreview":"证据是否适用、缺口是否补齐","textChars":13,"textLines":1,"bbox":[961,349,250,37]}
+{"kind":"shape","id":"sh/b6t03i1w","slide":1,"name":"surface-22","bbox":[651,423,570,86]}
+{"kind":"textbox","id":"sh/ojih83i5","slide":1,"name":"text-23","text":"实验三：可解释诊断报告质量","textPreview":"实验三：可解释诊断报告质量","textChars":13,"textLines":1,"bbox":[661,433,550,28]}
+{"kind":"textbox","id":"sh/p4ri18jq","slide":1,"name":"text-24","text":"声明支持、必要证据覆盖、临床错误","textPreview":"声明支持、必要证据覆盖、临床错误","textChars":16,"textLines":1,"bbox":[661,466,550,37]}
+{"kind":"shape","id":"sh/2h0z6d0z","slide":1,"name":"surface-25","bbox":[651,540,270,68]}
+{"kind":"textbox","id":"sh/ni90zi1k","slide":1,"name":"text-26","text":"实验四：诊断性能","textPreview":"实验四：诊断性能","textChars":8,"textLines":1,"bbox":[661,550,250,28]}
+{"kind":"textbox","id":"sh/0fih43i9","slide":1,"name":"text-27","text":"患者级临床状态判断","textPreview":"患者级临床状态判断","textChars":9,"textLines":1,"bbox":[661,583,250,19]}
+{"kind":"shape","id":"sh/1grix8je","slide":1,"name":"surface-28","bbox":[951,540,270,68]}
+{"kind":"textbox","id":"sh/3ap07ylg","slide":1,"name":"text-29","text":"实验五：消融与鲁棒性","textPreview":"实验五：消融与鲁棒性","textChars":10,"textLines":1,"bbox":[961,550,250,28]}
+{"kind":"textbox","id":"sh/i9gjetkv","slide":1,"name":"text-30","text":"模块贡献与输入扰动","textPreview":"模块贡献与输入扰动","textChars":9,"textLines":1,"bbox":[961,583,250,19]}
+{"kind":"shape","id":"sh/5c7i983m","slide":1,"bbox":[786,275,150,31]}
+{"kind":"shape","id":"sh/4by1g321","slide":1,"bbox":[936,275,150,31]}
+{"kind":"shape","id":"sh/rep0bylc","slide":1,"bbox":[786,392,150,31]}
+{"kind":"shape","id":"sh/qdgjidk7","slide":1,"bbox":[936,392,150,31]}
+{"kind":"shape","id":"sh/dgr2d83i","slide":1,"bbox":[786,509,150,31]}
+{"kind":"shape","id":"sh/sfi1k32x","slide":1,"bbox":[936,509,150,31]}
+{"kind":"textbox","id":"sh/f29kfilo","slide":1,"name":"text-31","text":"计划规模，尚未完成采集或标注。ADNI 访视诊断标签用于临床状态评价。","textPreview":"计划规模，尚未完成采集或标注。ADNI 访视诊断标签用于临床状态评价。","textChars":35,"textLines":1,"bbox":[29,648,920,24]}
+{"kind":"table","id":"tb/n2lwz6d4","slide":1,"name":"","rows":4,"cols":3,"preview":"数据集 | 来源与计划规模 | 评价用途","bbox":[42,249,538,228]}
+{"kind":"notes","id":"nt/768stg","slide":1,"text":"内容来源：用户提供的实验设计文本。全部样本规模均为规划数量，尚未表示采集、标注或实验已完成。\nADNI 的临床标签不能等同于独立病理确诊。病例证据集需标注知识的适用性与必要性。报告金标准来自病例子集。"}
+{"kind":"slide","id":"sl/naptd0","slide":2,"title":"01","textShapes":17}
+{"kind":"shape","id":"sh/l4jm9g7e","slide":2,"name":"surface-32","bbox":[24,98,607,534]}
+{"kind":"shape","id":"sh/y1sne1on","slide":2,"name":"surface-33","bbox":[25,99,605,50]}
+{"kind":"textbox","id":"sh/z21476p8","slide":2,"name":"text-34","text":"01","textPreview":"01","textChars":2,"textLines":1,"bbox":[39,105,46,34]}
+{"kind":"textbox","id":"sh/cfq5cr6h","slide":2,"name":"text-35","text":"实验一：条件化知识构建","textPreview":"实验一：条件化知识构建","textChars":11,"textLines":1,"bbox":[97,105,518,34]}
+{"kind":"shape","id":"sh/dgjm5w72","slide":2,"name":"surface-36","bbox":[649,98,607,534]}
+{"kind":"shape","id":"sh/qd8nahor","slide":2,"name":"surface-37","bbox":[650,99,605,50]}
+{"kind":"textbox","id":"sh/beh43mpw","slide":2,"name":"text-38","text":"02","textPreview":"02","textChars":2,"textLines":1,"bbox":[664,105,46,34]}
+{"kind":"textbox","id":"sh/wbu5ov61","slide":2,"name":"text-39","text":"实验二：患者证据检索与补查","textPreview":"实验二：患者证据检索与补查","textChars":13,"textLines":1,"bbox":[722,105,518,34]}
+{"kind":"textbox","id":"sh/xc36h0n6","slide":2,"name":"text-40","text":"验证医学声明的条件归属、逻辑关系及来源保留","textPreview":"验证医学声明的条件归属、逻辑关系及来源保留","textChars":21,"textLines":1,"bbox":[44,160,565,46]}
+{"kind":"textbox","id":"sh/1gna5cre","slide":2,"name":"text-41","text":"对照方法","textPreview":"对照方法","textChars":4,"textLines":1,"bbox":[44,213,560,29]}
+{"kind":"textbox","id":"sh/ze58329o","slide":2,"name":"text-42","text":"主要指标","textPreview":"主要指标","textChars":4,"textLines":1,"bbox":[44,445,565,29]}
+{"kind":"textbox","id":"sh/edwraxs3","slide":2,"name":"text-43","text":"条件归属 F1、完整声明准确率","textPreview":"条件归属 F1、完整声明准确率","textChars":15,"textLines":1,"bbox":[44,481,565,30]}
+{"kind":"textbox","id":"sh/dsnq1sri","slide":2,"name":"text-44","text":"辅助：声明 / 条件抽取 F1、来源定位准确率","textPreview":"辅助：声明 / 条件抽取 F1、来源定位准确率","textChars":23,"textLines":1,"bbox":[44,520,565,26]}
+{"kind":"textbox","id":"sh/cre98nax","slide":2,"name":"text-45","text":"分场景：同句同段、跨段标题、表格表注、\n角标脚注与跨页条件","textPreview":"分场景：同句同段、跨段标题、表格表注、 | 角标脚注与跨页条件","textChars":29,"textLines":2,"bbox":[44,562,565,52]}
+{"kind":"textbox","id":"sh/rql8zi9c","slide":2,"name":"text-46","text":"验证患者状态匹配、证据缺口识别与定向补查","textPreview":"验证患者状态匹配、证据缺口识别与定向补查","textChars":20,"textLines":1,"bbox":[669,160,565,46]}
+{"kind":"textbox","id":"sh/qpcr6xsr","slide":2,"name":"text-47","text":"对照方法","textPreview":"对照方法","textChars":4,"textLines":1,"bbox":[669,213,560,29]}
+{"kind":"textbox","id":"sh/wny9krah","slide":2,"name":"text-48","text":"主要指标","textPreview":"主要指标","textChars":4,"textLines":1,"bbox":[669,445,565,29]}
+{"kind":"textbox","id":"sh/gr6tgvyd","slide":2,"name":"text-49","text":"知识适用性 Macro-F1、必要证据覆盖率\n证据缺口识别 F1","textPreview":"知识适用性 Macro-F1、必要证据覆盖率 | 证据缺口识别 F1","textChars":32,"textLines":2,"bbox":[669,481,565,57]}
+{"kind":"textbox","id":"sh/hsfu90zy","slide":2,"name":"text-50","text":"辅助：Recall@10、nDCG@10、补查成功率及成本","textPreview":"辅助：Recall@10、nDCG@10、补查成功率及成本","textChars":29,"textLines":1,"bbox":[669,545,565,27]}
+{"kind":"textbox","id":"sh/upobelg7","slide":2,"name":"text-51","text":"知识缺口：补查原文\n患者数据缺口：明确提示缺失","textPreview":"知识缺口：补查原文 | 患者数据缺口：明确提示缺失","textChars":23,"textLines":2,"bbox":[669,580,565,40]}
+{"kind":"textbox","id":"sh/vqxc7qhs","slide":2,"name":"text-52","text":"公平对照：同一知识库与检索预算。固定条件化图谱，额外比较算法二的独立效果。","textPreview":"公平对照：同一知识库与检索预算。固定条件化图谱，额外比较算法二的独立效果。","textChars":37,"textLines":1,"bbox":[29,648,930,24]}
+{"kind":"table","id":"tb/b2h4nm58","slide":2,"name":"","rows":5,"cols":2,"preview":"方法 | 核心变化","bbox":[43,250,569,184]}
+{"kind":"table","id":"tb/e9o36xof","slide":2,"name":"","rows":5,"cols":2,"preview":"方法 | 检索策略","bbox":[668,250,569,184]}
+{"kind":"notes","id":"nt/naptd0","slide":2,"text":"内容来源：用户提供的实验设计文本。全部样本规模均为规划数量，尚未表示采集、标注或实验已完成。\nB2 与 B3 使用充分设计的提示词。实验二的知识适用性分为适用、不适用、条件未知。知识缺口与患者数据缺口分别评价，文献检索不能补出患者尚未开展的检查结果。Dense RAG 与 Hybrid RAG 为两个独立对照组，表中合并一行仅为排版。固定条件化图谱时，比较普通检索、Agentic RAG 与算法二。"}
+{"kind":"slide","id":"sl/yyp4tg","slide":3,"title":"实验三：可解释辅助诊断报告质量评价","textShapes":21}
+{"kind":"textbox","id":"sh/fy5gjaho","slide":3,"name":"text-53","text":"实验三：可解释辅助诊断报告质量评价","textPreview":"实验三：可解释辅助诊断报告质量评价","textChars":17,"textLines":1,"bbox":[27,95,1180,40]}
+{"kind":"textbox","id":"sh/gzehcfy9","slide":3,"name":"text-54","text":"统一报告章节：综合判断、患者证据、医学依据、限制与冲突、辅助建议","textPreview":"统一报告章节：综合判断、患者证据、医学依据、限制与冲突、辅助建议","textChars":32,"textLines":1,"bbox":[29,150,1218,30]}
+{"kind":"shape","id":"sh/h0nilkzu","slide":3,"name":"surface-55","bbox":[29,205,250,91]}
+{"kind":"textbox","id":"sh/2lwzepgz","slide":3,"name":"text-56","text":"自然语言报告","textPreview":"自然语言报告","textChars":6,"textLines":1,"bbox":[39,215,230,28]}
+{"kind":"textbox","id":"sh/3mp0nuhk","slide":3,"name":"text-57","text":"不存在的信息明确标为缺失","textPreview":"不存在的信息明确标为缺失","textChars":12,"textLines":1,"bbox":[39,248,230,42]}
+{"kind":"shape","id":"sh/4nyhgfy5","slide":3,"name":"surface-58","bbox":[313,205,279,91]}
+{"kind":"textbox","id":"sh/po7ipkzq","slide":3,"name":"text-59","text":"原子医学声明拆解","textPreview":"原子医学声明拆解","textChars":8,"textLines":1,"bbox":[323,215,259,28]}
+{"kind":"textbox","id":"sh/i5cz2l0v","slide":3,"name":"text-60","text":"诊断结论、事实、知识、缺失","textPreview":"诊断结论、事实、知识、缺失","textChars":13,"textLines":1,"bbox":[323,248,259,42]}
+{"kind":"shape","id":"sh/jqlgbqhg","slide":3,"name":"surface-61","bbox":[626,205,282,91]}
+{"kind":"textbox","id":"sh/j6l8zm1c","slide":3,"name":"text-62","text":"逐条证据核验","textPreview":"逐条证据核验","textChars":6,"textLines":1,"bbox":[636,215,262,28]}
+{"kind":"textbox","id":"sh/i5cr6h0r","slide":3,"name":"text-63","text":"患者记录、知识原文、专家标准","textPreview":"患者记录、知识原文、专家标准","textChars":14,"textLines":1,"bbox":[636,248,262,42]}
+{"kind":"shape","id":"sh/583q1cji","slide":3,"name":"surface-64","bbox":[942,205,310,91]}
+{"kind":"textbox","id":"sh/47u98rix","slide":3,"name":"text-65","text":"指标统计与错误分级","textPreview":"指标统计与错误分级","textChars":9,"textLines":1,"bbox":[952,215,290,28]}
+{"kind":"textbox","id":"sh/v218v210","slide":3,"name":"text-66","text":"判断、证据定位及错误原因","textPreview":"判断、证据定位及错误原因","textChars":12,"textLines":1,"bbox":[952,248,290,42]}
+{"kind":"shape","id":"sh/u1s72x0v","slide":3,"bbox":[279,250.5,34,0]}
+{"kind":"shape","id":"sh/h43qxcj6","slide":3,"bbox":[592,250.5,34,0]}
+{"kind":"shape","id":"sh/w3ap47il","slide":3,"bbox":[908,250.5,34,0]}
+{"kind":"textbox","id":"sh/7y18r214","slide":3,"name":"text-67","text":"临床错误：患者事实、医学知识、条件适用、关键证据遗漏、过度诊断、来源错误","textPreview":"临床错误：患者事实、医学知识、条件适用、关键证据遗漏、过度诊断、来源错误","textChars":36,"textLines":1,"bbox":[31,318,1214,29]}
+{"kind":"shape","id":"sh/mds7yx0j","slide":3,"name":"surface-68","bbox":[24,367,730,265]}
+{"kind":"shape","id":"sh/a98rax4b","slide":3,"name":"surface-69","bbox":[25,368,728,50]}
+{"kind":"textbox","id":"sh/bah832lw","slide":3,"name":"text-70","text":"03","textPreview":"03","textChars":2,"textLines":1,"bbox":[39,374,46,34]}
+{"kind":"textbox","id":"sh/cbq9cnmh","slide":3,"name":"text-71","text":"报告质量主要终点","textPreview":"报告质量主要终点","textChars":8,"textLines":1,"bbox":[97,374,641,34]}
+{"kind":"textbox","id":"sh/yxsrex4n","slide":3,"name":"text-72","text":"辅助：患者事实准确率、知识适用性 Macro-F1、无依据陈述率","textPreview":"辅助：患者事实准确率、知识适用性 Macro-F1、无依据陈述率","textChars":32,"textLines":1,"bbox":[44,585,687,32]}
+{"kind":"shape","id":"sh/zy1s72l8","slide":3,"name":"surface-73","bbox":[772,367,484,265]}
+{"kind":"shape","id":"sh/kza9g7md","slide":3,"name":"surface-74","bbox":[773,368,482,50]}
+{"kind":"textbox","id":"sh/l0ja9c3y","slide":3,"name":"text-75","text":"04","textPreview":"04","textChars":2,"textLines":1,"bbox":[787,374,46,34]}
+{"kind":"textbox","id":"sh/m1srih4j","slide":3,"name":"text-76","text":"专家标注与评价验证","textPreview":"专家标注与评价验证","textChars":9,"textLines":1,"bbox":[845,374,395,34]}
+{"kind":"textbox","id":"sh/721sbml4","slide":3,"name":"text-77","text":"金标准：60–100 个病例子集","textPreview":"金标准：60–100 个病例子集","textChars":16,"textLines":1,"bbox":[791,429,445,29]}
+{"kind":"textbox","id":"sh/h8n2x0ri","slide":3,"name":"text-78","text":"参考标准含关键事实、必要证据、\n适用条件、资料缺失与错误清单","textPreview":"参考标准含关键事实、必要证据、 | 适用条件、资料缺失与错误清单","textChars":30,"textLines":2,"bbox":[791,466,445,51]}
+{"kind":"textbox","id":"sh/g7elovax","slide":3,"name":"text-79","text":"规则开发：15–20 例开发病例\n独立复核：60–100 份匿名随机报告","textPreview":"规则开发：15–20 例开发病例 | 独立复核：60–100 份匿名随机报告","textChars":36,"textLines":2,"bbox":[791,527,445,50]}
+{"kind":"textbox","id":"sh/f65kva9c","slide":3,"name":"text-80","text":"轻微 / 中等 / 严重分级，验证自动核验","textPreview":"轻微 / 中等 / 严重分级，验证自动核验","textChars":21,"textLines":1,"bbox":[791,587,445,30]}
+{"kind":"textbox","id":"sh/u5w3m5s7","slide":3,"name":"text-81","text":"各指标分别报告。自动严重错误识别不足时，以专家人工评价作为主要结果。","textPreview":"各指标分别报告。自动严重错误识别不足时，以专家人工评价作为主要结果。","textChars":34,"textLines":1,"bbox":[29,648,912,24]}
+{"kind":"table","id":"tb/ylobqdkz","slide":3,"name":"","rows":4,"cols":3,"preview":"主要终点 | 计算依据 | 评价目标","bbox":[42,428,694,139]}
+{"kind":"notes","id":"nt/yyp4tg","slide":3,"text":"内容来源：用户提供的实验设计文本。全部样本规模均为规划数量，尚未表示采集、标注或实验已完成。\n不设置唯一标准报告，也不将指标强行加权为总分。专家参考答案还包含可接受诊断结论及证据不足的判断。条件允许时双专家独立标注并仲裁。验证自动评分的 Precision、Recall、F1 及专家一致性，达到预设标准后再用于剩余报告。专家不知报告所属方法。"}
+{"kind":"slide","id":"sl/ovwrig","slide":4,"title":"04","textShapes":14}
+{"kind":"shape","id":"sh/25gf250v","slide":4,"name":"surface-82","bbox":[24,98,607,534]}
+{"kind":"shape","id":"sh/p87yxkjm","slide":4,"name":"surface-83","bbox":[25,99,605,50]}
+{"kind":"textbox","id":"sh/o7yx4fi1","slide":4,"name":"text-84","text":"04","textPreview":"04","textChars":2,"textLines":1,"bbox":[39,105,46,34]}
+{"kind":"textbox","id":"sh/f2pwra1k","slide":4,"name":"text-85","text":"实验四：整体系统诊断性能","textPreview":"实验四：整体系统诊断性能","textChars":12,"textLines":1,"bbox":[97,105,518,34]}
+{"kind":"shape","id":"sh/ehwfy50z","slide":4,"name":"surface-86","bbox":[649,98,607,534]}
+{"kind":"shape","id":"sh/147etkja","slide":4,"name":"surface-87","bbox":[650,99,605,50]}
+{"kind":"textbox","id":"sh/g3yx0fip","slide":4,"name":"text-88","text":"05","textPreview":"05","textChars":2,"textLines":1,"bbox":[664,105,46,34]}
+{"kind":"textbox","id":"sh/zy9g3uho","slide":4,"name":"text-89","text":"实验五：消融与鲁棒性","textPreview":"实验五：消融与鲁棒性","textChars":10,"textLines":1,"bbox":[722,105,518,34]}
+{"kind":"textbox","id":"sh/yd0fa903","slide":4,"name":"text-90","text":"评价知识构建与检索优化对患者级判断的贡献","textPreview":"评价知识构建与检索优化对患者级判断的贡献","textChars":20,"textLines":1,"bbox":[44,160,565,42]}
+{"kind":"textbox","id":"sh/8vidg3id","slide":4,"name":"text-91","text":"系统对照","textPreview":"系统对照","textChars":4,"textLines":1,"bbox":[44,210,565,29]}
+{"kind":"textbox","id":"sh/mt0vet07","slide":4,"name":"text-92","text":"诊断指标与结果展示","textPreview":"诊断指标与结果展示","textChars":9,"textLines":1,"bbox":[44,488,565,29]}
+{"kind":"textbox","id":"sh/7u9w7yhs","slide":4,"name":"text-93","text":"Accuracy、Macro-F1、Balanced Accuracy\n混淆矩阵，另列报告质量结果","textPreview":"Accuracy、Macro-F1、Balanced Accuracy | 混淆矩阵，另列报告质量结果","textChars":49,"textLines":2,"bbox":[44,526,565,48]}
+{"kind":"textbox","id":"sh/07idcji1","slide":4,"name":"text-94","text":"证据不足：报告拒绝判断率，\n并统计已判断病例的准确率","textPreview":"证据不足：报告拒绝判断率， | 并统计已判断病例的准确率","textChars":26,"textLines":2,"bbox":[44,580,565,38]}
+{"kind":"textbox","id":"sh/l8re5ozm","slide":4,"name":"text-95","text":"两个算法的模块消融","textPreview":"两个算法的模块消融","textChars":9,"textLines":1,"bbox":[669,160,565,29]}
+{"kind":"textbox","id":"sh/z69w3ehw","slide":4,"name":"text-96","text":"共同评价：诊断 Macro-F1、证据覆盖率、\n医学声明支持率、严重临床错误率","textPreview":"共同评价：诊断 Macro-F1、证据覆盖率、 | 医学声明支持率、严重临床错误率","textChars":39,"textLines":2,"bbox":[669,389,565,48]}
+{"kind":"textbox","id":"sh/c3yd8ji5","slide":4,"name":"text-97","text":"鲁棒性场景","textPreview":"鲁棒性场景","textChars":5,"textLines":1,"bbox":[669,444,565,29]}
+{"kind":"textbox","id":"sh/tof2pg72","slide":4,"name":"text-98","text":"固定协作框架；解释实验固定候选诊断","textPreview":"固定协作框架；解释实验固定候选诊断","textChars":17,"textLines":1,"bbox":[669,611,565,21]}
+{"kind":"textbox","id":"sh/sn6lwb6h","slide":4,"name":"text-99","text":"同一病例、底层 LLM、知识语料、报告结构及可比预算。缺失模态区分自然缺失与人为遮蔽。","textPreview":"同一病例、底层 LLM、知识语料、报告结构及可比预算。缺失模态区分自然缺失与人为遮蔽。","textChars":43,"textLines":1,"bbox":[29,648,935,24]}
+{"kind":"table","id":"tb/ihobitkj","slide":4,"name":"","rows":6,"cols":2,"preview":"方法 | 验证作用","bbox":[43,239,569,207]}
+{"kind":"table","id":"tb/xgfa9ojy","slide":4,"name":"","rows":5,"cols":3,"preview":"实验组 | 条件化知识构建 | 患者状态引导检索","bbox":[668,199,569,175]}
+{"kind":"table","id":"tb/m94ra9kb","slide":4,"name":"","rows":4,"cols":2,"preview":"输入扰动 | 评价重点","bbox":[668,479,569,113]}
+{"kind":"notes","id":"nt/ovwrig","slide":4,"text":"内容来源：用户提供的实验设计文本。全部样本规模均为规划数量，尚未表示采集、标注或实验已完成。\n主任务为 CN/MCI/AD 三类临床状态判断。只有获得有意义的类别概率时才增加 AUROC、Brier Score 或校准误差，不把自然语言概率直接当作校准概率。四个消融组保留多智能体分析框架。固定候选诊断的解释实验排除诊断类别差异的干扰。鲁棒性中的条件变化采用满足与不满足条件的成对病例。所有内容是实验设计，不呈现虚构结果。"}

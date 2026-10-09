@@ -1,0 +1,615 @@
+{
+  "schemaVersion": "presentation-finalization.v1",
+  "finalSha256": "330b9b1c827b0feb5d0650d3614ad9530f3ecdb645184f07722afecb554bfb61",
+  "byteCount": 18847530,
+  "packageIntegrity": {
+    "chart_count": 0,
+    "claim_boundary": "Structural package checks only; no slide text, notes, formulas, chart values, or native PowerPoint execution were inspected.",
+    "finding_count": 0,
+    "findings": [],
+    "notes_parts_skipped": 12,
+    "relationship_part_count": 43,
+    "slide_count": 12,
+    "status": "pass",
+    "exitCode": 0,
+    "findingCount": 0,
+    "warnings": []
+  },
+  "presentationLayout": {
+    "finding_count": 0,
+    "findings": [],
+    "slide_count": 12,
+    "slide_size_in": [
+      13.3333,
+      7.5
+    ],
+    "warning_count": 78,
+    "warnings": [
+      {
+        "connector_id": "8",
+        "connector_z": 5,
+        "kind": "connector_over_text",
+        "slide": 1,
+        "text_object_id": "5",
+        "text_z": 4
+      },
+      {
+        "kind": "object_outside_slide_boundary",
+        "object_id": "16",
+        "object_kind": "pic",
+        "slide": 1
+      },
+      {
+        "kind": "object_outside_slide_boundary",
+        "object_id": "105",
+        "object_kind": "pic",
+        "slide": 2
+      },
+      {
+        "kind": "object_outside_slide_boundary",
+        "object_id": "106",
+        "object_kind": "sp",
+        "slide": 2
+      },
+      {
+        "kind": "object_outside_slide_boundary",
+        "object_id": "107",
+        "object_kind": "pic",
+        "slide": 2
+      },
+      {
+        "kind": "object_outside_slide_boundary",
+        "object_id": "108",
+        "object_kind": "pic",
+        "slide": 2
+      },
+      {
+        "kind": "object_outside_slide_boundary",
+        "object_id": "109",
+        "object_kind": "sp",
+        "slide": 2
+      },
+      {
+        "kind": "object_outside_slide_boundary",
+        "object_id": "110",
+        "object_kind": "sp",
+        "slide": 2
+      },
+      {
+        "kind": "object_outside_slide_boundary",
+        "object_id": "117",
+        "object_kind": "pic",
+        "slide": 2
+      },
+      {
+        "kind": "object_outside_slide_boundary",
+        "object_id": "136",
+        "object_kind": "pic",
+        "slide": 3
+      },
+      {
+        "kind": "object_outside_slide_boundary",
+        "object_id": "137",
+        "object_kind": "sp",
+        "slide": 3
+      },
+      {
+        "kind": "object_outside_slide_boundary",
+        "object_id": "138",
+        "object_kind": "pic",
+        "slide": 3
+      },
+      {
+        "kind": "object_outside_slide_boundary",
+        "object_id": "139",
+        "object_kind": "pic",
+        "slide": 3
+      },
+      {
+        "kind": "object_outside_slide_boundary",
+        "object_id": "140",
+        "object_kind": "sp",
+        "slide": 3
+      },
+      {
+        "kind": "object_outside_slide_boundary",
+        "object_id": "141",
+        "object_kind": "sp",
+        "slide": 3
+      },
+      {
+        "kind": "object_outside_slide_boundary",
+        "object_id": "147",
+        "object_kind": "pic",
+        "slide": 3
+      },
+      {
+        "kind": "object_outside_slide_boundary",
+        "object_id": "174",
+        "object_kind": "pic",
+        "slide": 4
+      },
+      {
+        "kind": "object_outside_slide_boundary",
+        "object_id": "175",
+        "object_kind": "sp",
+        "slide": 4
+      },
+      {
+        "kind": "object_outside_slide_boundary",
+        "object_id": "176",
+        "object_kind": "pic",
+        "slide": 4
+      },
+      {
+        "kind": "object_outside_slide_boundary",
+        "object_id": "177",
+        "object_kind": "pic",
+        "slide": 4
+      },
+      {
+        "kind": "object_outside_slide_boundary",
+        "object_id": "178",
+        "object_kind": "sp",
+        "slide": 4
+      },
+      {
+        "kind": "object_outside_slide_boundary",
+        "object_id": "179",
+        "object_kind": "sp",
+        "slide": 4
+      },
+      {
+        "kind": "object_outside_slide_boundary",
+        "object_id": "185",
+        "object_kind": "pic",
+        "slide": 4
+      },
+      {
+        "kind": "object_outside_slide_boundary",
+        "object_id": "181",
+        "object_kind": "pic",
+        "slide": 5
+      },
+      {
+        "kind": "object_outside_slide_boundary",
+        "object_id": "182",
+        "object_kind": "sp",
+        "slide": 5
+      },
+      {
+        "kind": "object_outside_slide_boundary",
+        "object_id": "183",
+        "object_kind": "pic",
+        "slide": 5
+      },
+      {
+        "kind": "object_outside_slide_boundary",
+        "object_id": "184",
+        "object_kind": "pic",
+        "slide": 5
+      },
+      {
+        "kind": "object_outside_slide_boundary",
+        "object_id": "185",
+        "object_kind": "sp",
+        "slide": 5
+      },
+      {
+        "kind": "object_outside_slide_boundary",
+        "object_id": "186",
+        "object_kind": "sp",
+        "slide": 5
+      },
+      {
+        "kind": "object_outside_slide_boundary",
+        "object_id": "192",
+        "object_kind": "pic",
+        "slide": 5
+      },
+      {
+        "kind": "object_outside_slide_boundary",
+        "object_id": "178",
+        "object_kind": "pic",
+        "slide": 6
+      },
+      {
+        "kind": "object_outside_slide_boundary",
+        "object_id": "179",
+        "object_kind": "pic",
+        "slide": 6
+      },
+      {
+        "kind": "object_outside_slide_boundary",
+        "object_id": "180",
+        "object_kind": "sp",
+        "slide": 6
+      },
+      {
+        "kind": "object_outside_slide_boundary",
+        "object_id": "182",
+        "object_kind": "pic",
+        "slide": 6
+      },
+      {
+        "kind": "object_outside_slide_boundary",
+        "object_id": "183",
+        "object_kind": "sp",
+        "slide": 6
+      },
+      {
+        "kind": "object_outside_slide_boundary",
+        "object_id": "184",
+        "object_kind": "sp",
+        "slide": 6
+      },
+      {
+        "kind": "object_outside_slide_boundary",
+        "object_id": "190",
+        "object_kind": "pic",
+        "slide": 6
+      },
+      {
+        "kind": "object_outside_slide_boundary",
+        "object_id": "236",
+        "object_kind": "pic",
+        "slide": 7
+      },
+      {
+        "kind": "object_outside_slide_boundary",
+        "object_id": "238",
+        "object_kind": "pic",
+        "slide": 7
+      },
+      {
+        "kind": "object_outside_slide_boundary",
+        "object_id": "239",
+        "object_kind": "sp",
+        "slide": 7
+      },
+      {
+        "kind": "object_outside_slide_boundary",
+        "object_id": "240",
+        "object_kind": "pic",
+        "slide": 7
+      },
+      {
+        "kind": "object_outside_slide_boundary",
+        "object_id": "241",
+        "object_kind": "sp",
+        "slide": 7
+      },
+      {
+        "kind": "object_outside_slide_boundary",
+        "object_id": "242",
+        "object_kind": "sp",
+        "slide": 7
+      },
+      {
+        "kind": "object_outside_slide_boundary",
+        "object_id": "248",
+        "object_kind": "pic",
+        "slide": 7
+      },
+      {
+        "kind": "object_outside_slide_boundary",
+        "object_id": "3",
+        "object_kind": "pic",
+        "slide": 8
+      },
+      {
+        "kind": "object_outside_slide_boundary",
+        "object_id": "5",
+        "object_kind": "pic",
+        "slide": 8
+      },
+      {
+        "kind": "object_outside_slide_boundary",
+        "object_id": "6",
+        "object_kind": "sp",
+        "slide": 8
+      },
+      {
+        "kind": "object_outside_slide_boundary",
+        "object_id": "7",
+        "object_kind": "pic",
+        "slide": 8
+      },
+      {
+        "kind": "object_outside_slide_boundary",
+        "object_id": "8",
+        "object_kind": "sp",
+        "slide": 8
+      },
+      {
+        "kind": "object_outside_slide_boundary",
+        "object_id": "9",
+        "object_kind": "sp",
+        "slide": 8
+      },
+      {
+        "kind": "object_outside_slide_boundary",
+        "object_id": "15",
+        "object_kind": "pic",
+        "slide": 8
+      },
+      {
+        "kind": "object_outside_slide_boundary",
+        "object_id": "16",
+        "object_kind": "sp",
+        "slide": 8
+      },
+      {
+        "kind": "object_outside_slide_boundary",
+        "object_id": "3",
+        "object_kind": "pic",
+        "slide": 9
+      },
+      {
+        "kind": "object_outside_slide_boundary",
+        "object_id": "5",
+        "object_kind": "pic",
+        "slide": 9
+      },
+      {
+        "kind": "object_outside_slide_boundary",
+        "object_id": "6",
+        "object_kind": "sp",
+        "slide": 9
+      },
+      {
+        "kind": "object_outside_slide_boundary",
+        "object_id": "7",
+        "object_kind": "pic",
+        "slide": 9
+      },
+      {
+        "kind": "object_outside_slide_boundary",
+        "object_id": "8",
+        "object_kind": "sp",
+        "slide": 9
+      },
+      {
+        "kind": "object_outside_slide_boundary",
+        "object_id": "9",
+        "object_kind": "sp",
+        "slide": 9
+      },
+      {
+        "kind": "object_outside_slide_boundary",
+        "object_id": "15",
+        "object_kind": "pic",
+        "slide": 9
+      },
+      {
+        "kind": "object_outside_slide_boundary",
+        "object_id": "16",
+        "object_kind": "sp",
+        "slide": 9
+      },
+      {
+        "kind": "object_outside_slide_boundary",
+        "object_id": "3",
+        "object_kind": "pic",
+        "slide": 10
+      },
+      {
+        "kind": "object_outside_slide_boundary",
+        "object_id": "5",
+        "object_kind": "pic",
+        "slide": 10
+      },
+      {
+        "kind": "object_outside_slide_boundary",
+        "object_id": "6",
+        "object_kind": "sp",
+        "slide": 10
+      },
+      {
+        "kind": "object_outside_slide_boundary",
+        "object_id": "7",
+        "object_kind": "pic",
+        "slide": 10
+      },
+      {
+        "kind": "object_outside_slide_boundary",
+        "object_id": "8",
+        "object_kind": "sp",
+        "slide": 10
+      },
+      {
+        "kind": "object_outside_slide_boundary",
+        "object_id": "9",
+        "object_kind": "sp",
+        "slide": 10
+      },
+      {
+        "kind": "object_outside_slide_boundary",
+        "object_id": "15",
+        "object_kind": "pic",
+        "slide": 10
+      },
+      {
+        "kind": "object_outside_slide_boundary",
+        "object_id": "16",
+        "object_kind": "sp",
+        "slide": 10
+      },
+      {
+        "kind": "object_outside_slide_boundary",
+        "object_id": "3",
+        "object_kind": "pic",
+        "slide": 11
+      },
+      {
+        "kind": "object_outside_slide_boundary",
+        "object_id": "5",
+        "object_kind": "pic",
+        "slide": 11
+      },
+      {
+        "kind": "object_outside_slide_boundary",
+        "object_id": "6",
+        "object_kind": "sp",
+        "slide": 11
+      },
+      {
+        "kind": "object_outside_slide_boundary",
+        "object_id": "7",
+        "object_kind": "pic",
+        "slide": 11
+      },
+      {
+        "kind": "object_outside_slide_boundary",
+        "object_id": "8",
+        "object_kind": "sp",
+        "slide": 11
+      },
+      {
+        "kind": "object_outside_slide_boundary",
+        "object_id": "9",
+        "object_kind": "sp",
+        "slide": 11
+      },
+      {
+        "kind": "object_outside_slide_boundary",
+        "object_id": "15",
+        "object_kind": "pic",
+        "slide": 11
+      },
+      {
+        "kind": "object_outside_slide_boundary",
+        "object_id": "16",
+        "object_kind": "sp",
+        "slide": 11
+      },
+      {
+        "available_bottom_in": 6.3646,
+        "columns": 2,
+        "declared_bottom_in": 6.1667,
+        "estimated_native_bottom_in": 6.5496,
+        "footer_object_ids": [
+          "38"
+        ],
+        "kind": "native_table_overflow",
+        "overflow_in": 0.185,
+        "rows": 4,
+        "slide": 11,
+        "table_id": "37"
+      },
+      {
+        "kind": "object_outside_slide_boundary",
+        "object_id": "16",
+        "object_kind": "pic",
+        "slide": 12
+      }
+    ],
+    "exitCode": 0,
+    "findingCount": 0
+  },
+  "fontSelection": {
+    "basis": "unspecified",
+    "approvedFamilies": [],
+    "scriptFonts": {},
+    "referenceSha256": null,
+    "referenceFontsVerifiedInEncodedText": false
+  },
+  "firstPartyImport": {
+    "performed": true,
+    "passed": true,
+    "slideCount": 12,
+    "sha256": "330b9b1c827b0feb5d0650d3614ad9530f3ecdb645184f07722afecb554bfb61",
+    "runtimeNodeModules": "C:/Users/admin/.cache/codex-runtimes/codex-primary-runtime/dependencies/node/node_modules",
+    "nodeExecutable": "C:\\Users\\admin\\.cache\\codex-runtimes\\codex-primary-runtime\\dependencies\\node\\bin\\node.exe"
+  },
+  "nativeTableArithmetic": {
+    "performed": true,
+    "checked_column_count": 0,
+    "checks": [],
+    "claim_boundary": "Displayed-value arithmetic with rounding tolerance; not source-data verification.",
+    "eligible_table_count": 0,
+    "finding_count": 0,
+    "findings": [],
+    "native_table_count": 7,
+    "passed": true,
+    "schema_version": "presentation-native-table-arithmetic.v1",
+    "skipped_tables": [
+      {
+        "reason": "no_numeric_amounts",
+        "slide": 8,
+        "table": 1
+      },
+      {
+        "reason": "no_numeric_amounts",
+        "slide": 9,
+        "table": 1
+      },
+      {
+        "reason": "no_numeric_amounts",
+        "slide": 9,
+        "table": 2
+      },
+      {
+        "reason": "no_numeric_amounts",
+        "slide": 10,
+        "table": 1
+      },
+      {
+        "reason": "no_numeric_amounts",
+        "slide": 11,
+        "table": 1
+      },
+      {
+        "reason": "no_numeric_amounts",
+        "slide": 11,
+        "table": 2
+      },
+      {
+        "reason": "no_numeric_amounts",
+        "slide": 11,
+        "table": 3
+      }
+    ],
+    "slide_count": 12,
+    "warning_count": 0,
+    "warnings": []
+  },
+  "nativeChartTitles": {
+    "performed": true,
+    "checks": [],
+    "finding_count": 0,
+    "findings": [],
+    "native_chart_count": 0,
+    "native_powerpoint_verified": false,
+    "passed": true,
+    "presentation_sha256": "330b9b1c827b0feb5d0650d3614ad9530f3ecdb645184f07722afecb554bfb61",
+    "schema_version": "presentation-native-chart-titles.v1",
+    "slide_count": 12,
+    "source_text_emitted": false,
+    "unresolved_linked_title_count": 0
+  },
+  "sourceDerivedPolicyFlags": [
+    "--expected-slide-size-emu",
+    "12192000,6858000",
+    "--require-native-table-slide",
+    "8",
+    "--require-native-table-slide",
+    "9",
+    "--require-native-table-slide",
+    "10",
+    "--require-native-table-slide",
+    "11",
+    "--cover-role",
+    "none",
+    "--expected-slide-count",
+    "12"
+  ],
+  "nativeChartValidation": {
+    "detectedOwnerSlides": [],
+    "detectedChartCount": 0,
+    "targetApplication": null,
+    "sourceChartOwnersExplicitlyDeclared": false,
+    "validatorRan": false,
+    "passed": true
+  }
+}
