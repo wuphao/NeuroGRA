@@ -1,0 +1,27 @@
+# All generation stages use local Qwen. Never falls back to a cloud provider.
+base_url: http://127.0.0.1:11434
+model: qwen3.8:27b
+embedding_model: qwen3-embedding:0.6b
+timeout: 300
+max_calls: 160
+max_embedding_calls: 500
+max_seconds: 3600
+context_tokens: 32768
+max_input_chars: 24000
+output_tokens: 4096
+chunk_chars: 2400
+# Development parameters: must be calibrated and frozen before research evaluation.
+link_threshold: 0.6
+merge_threshold: 0.95
+selected_graphs: 3
+# Path relative to THIS configuration file. Supply your frozen source manifest.
+knowledge_manifest: null
+knowledge_cache: ../output/baselines/medgraphrag/knowledge_cache
+# JSON stores the same graph structure per run and requires no database credentials.
+# Set neo4j to additionally persist entities, relations and REFERENCE links in Neo4j.
+graph_backend: json
+neo4j_uri: bolt://127.0.0.1:7687
+# Separate database required; default clinical database names are rejected.
+neo4j_database: medgraphrag
+neo4j_username: neo4j
+password_env: MEDGRAPHRAG_NEO4J_PASSWORD

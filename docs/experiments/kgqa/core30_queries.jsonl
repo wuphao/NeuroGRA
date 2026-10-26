@@ -1,0 +1,30 @@
+{"id": "Q01", "family_id": "imaging_escalation", "category": "条件应用", "question": "根据 DETeCD-ADRD 专科指南，正在评估认知—行为综合征的患者存在 MRI 禁忌证。结构性脑影像是否可以省略？应考虑什么替代检查？"}
+{"id": "Q02", "family_id": "F02", "category": "条件应用", "question": "根据 DETeCD-ADRD 专科指南，患者或家属持续反映日常认知问题，但诊室简短认知检查处于正常范围，下一步是否还需要神经心理评估？"}
+{"id": "Q03", "family_id": "imaging_escalation", "category": "条件应用", "question": "根据 DETeCD-ADRD 专科指南，患者已明确存在认知—行为综合征，结构影像判读后病因仍不确定，何时可以考虑 FDG-PET？它是否属于特定分子病理的直接标志物？"}
+{"id": "Q04", "family_id": "F04", "category": "条件应用", "question": "按 Albert 2011 标准，一名存在客观认知下降的患者处理账单比过去慢、偶有差错，但依靠少量辅助仍能独立完成日常活动。这种表现是否必然排除 MCI？"}
+{"id": "Q05", "family_id": "F05", "category": "阈值解释", "question": "Albert 2011 提到 MCI 认知测试常低于年龄与教育匹配常模 1—1.5 个标准差。这是否意味着必须使用固定的 1.5 SD 界值诊断 MCI？"}
+{"id": "Q06", "family_id": "mci_2011_biomarker", "category": "条件应用", "question": "按 Albert 2011 的研究用分层，一名已满足 MCI 核心临床标准的患者 Aβ 标志物阳性，但神经元损伤标志物未检测，应归为 AD 所致 MCI 的中等可能还是高可能？"}
+{"id": "Q07", "family_id": "mci_2011_biomarker", "category": "条件应用", "question": "按 Albert 2011 的研究用分层，MCI 患者 Aβ 标志物阳性、神经元损伤标志物明确阴性，是否仍属于中等可能？应如何解释这组证据？"}
+{"id": "Q08", "family_id": "F08", "category": "复合规则", "question": "根据 McKhann 2011 的全因痴呆标准，认知或行为损害最低需要涉及几个领域？仅证明两个领域异常是否已足够诊断痴呆？"}
+{"id": "Q09", "family_id": "F09", "category": "排除条件", "question": "按 McKhann 2011，全因痴呆判断中，如果患者当前认知和行为改变能够由谵妄充分解释，能否直接据此诊断痴呆？"}
+{"id": "Q10", "family_id": "F10", "category": "排除与混合病因", "question": "按 McKhann 2011，患者具有符合 AD 痴呆的认知表现，但认知恶化与卒中有明确时间关联，并有显著脑血管病证据。应直接使用 probable AD dementia，还是考虑 possible AD dementia 的混合病因情形？"}
+{"id": "Q11", "family_id": "F11", "category": "条件应用", "question": "按 McKhann 2011，已符合 probable AD dementia 临床标准的患者携带 APOE ε4，是否可以和 APP、PSEN1、PSEN2 致病突变一样，用于“致病突变携带者”的确定性增强分层？"}
+{"id": "Q12", "family_id": "jack_core1", "category": "条件应用", "question": "根据 Jack 2024 修订标准，经过验证、适合诊断用途的特定 Core 1 标志物异常，是否需要再额外满足 Core 2 异常才可建立 AD 生物学诊断？"}
+{"id": "Q13", "family_id": "jack_core1", "category": "条件应用", "question": "根据 Jack 2024，某商业血浆 p-tau 检测声称属于 Core 1，但未提供预期使用人群中的诊断准确性验证。能否仅凭“Core 1”名称及阳性结果认定满足 AD 诊断证据要求？"}
+{"id": "Q14", "family_id": "F14", "category": "阴性证据与用途", "question": "根据 Jack 2024，如果 Core 2 标志物正常或阴性，能否据此单独排除早期 AD 病理？"}
+{"id": "Q15", "family_id": "F15", "category": "用途与人群限制", "question": "Jack 2024 承认无症状者也可具有 AD 生物学异常，这是否意味着应在研究之外对认知正常、无症状者开展常规 AD 诊断性标志物检测？"}
+{"id": "Q16", "family_id": "bbm_scope", "category": "人群适用性", "question": "根据 Palmqvist 2025 血液标志物指南，患者只有主观记忆下降，客观测试符合预期，医生也未发现显著认知缺损。是否属于该指南推荐 BBM 检测的目标人群？"}
+{"id": "Q17", "family_id": "bbm_threshold", "category": "阈值与用途", "question": "患者已有客观认知损害、完成综合评估并在记忆专科就诊。假设某 BBM 在对应预期使用人群、相对认可参考标准的敏感度为 92%、特异度为 80%，按 Palmqvist 2025，它达到分流检测还是替代 PET／CSF 的确认检测门槛？"}
+{"id": "Q18", "family_id": "bbm_threshold", "category": "阈值与用途", "question": "一名存在客观认知损害、已完成综合临床评估的患者在记忆专科就诊。某 BBM 在对应预期使用人群中经验证的敏感度为 92%、特异度为 93%。根据 Palmqvist 2025，它是否达到作为确认性检测替代 PET／CSF 的性能门槛？能否因此省略综合临床评估？"}
+{"id": "Q19", "family_id": "bbm_threshold", "category": "脚注条件与后续检查", "question": "按 Palmqvist 2025，使用仅满足分流要求的 BBM 后结果阳性，能否直接视为已确认 AD 病理？下一步应检索到什么建议？"}
+{"id": "Q20", "family_id": "bbm_threshold", "category": "缺失条件", "question": "根据 Palmqvist 2025，只知道患者的检测分析物是 p-tau217，却不知道检测平台、方法及对应性能，能否判断它已满足确认性 BBM 的门槛？还缺哪些证据？"}
+{"id": "Q21", "family_id": "dlb_rules", "category": "条件应用", "question": "按 McKeith 2017，已满足痴呆前提的患者存在持续认知波动和反复、形象清晰的视幻觉，但尚无指示性标志物结果。缺少标志物是否阻止其满足 probable DLB 的相应规则？"}
+{"id": "Q22", "family_id": "dlb_rules", "category": "复合与排除条件", "question": "按 McKeith 2017，痴呆患者只有一项核心特征——自发性帕金森综合征，DAT-SPECT 显示基底节摄取降低。该组合何时可支持 probable DLB？还需注意什么排除条件？"}
+{"id": "Q23", "family_id": "dlb_rules", "category": "禁止性条件", "question": "按 McKeith 2017，患者已存在痴呆，有一项指示性生物标志物，但经充分评估未发现任何核心临床特征。能否仅凭标志物诊断 probable DLB？应对应哪一级别？"}
+{"id": "Q24", "family_id": "F24", "category": "检测混杂因素", "question": "按 McKeith 2017，疑似 DLB 患者 MIBG 心肌摄取降低，但同时有糖尿病并服用三环类抗抑郁药。这项结果能否不加限制地作为 DLB 特异证据？"}
+{"id": "Q25", "family_id": "bvftd_criteria", "category": "频率与计数条件", "question": "按 Rascovsky 2011，患者行为或认知呈进行性恶化，六类 bvFTD 特征中有三类出现，但均仅为孤立或罕见事件。是否已满足 possible bvFTD 的三类特征要求？"}
+{"id": "Q26", "family_id": "bvftd_criteria", "category": "缺失条件", "question": "按 Rascovsky 2011，患者已符合 possible bvFTD，并存在显著功能下降，但尚未获得结构或功能影像。能否直接升级为 probable bvFTD？还需什么证据？"}
+{"id": "Q27", "family_id": "bvftd_criteria", "category": "脚注作用域", "question": "Rascovsky 2011 表 3 中带星号的 early（早期）通常指多长时间？该时间限定与哪些症状条目关联，是否是绝对不变的硬阈值？"}
+{"id": "Q28", "family_id": "bvftd_criteria", "category": "分级排除及缺失例外", "question": "按 Rascovsky 2011，强烈提示 AD 病理的标志物阳性，对 possible 和 probable bvFTD 的排除作用是否相同？如果这些标志物根本没有检测，是否必须先完成阴性筛查才能考虑 probable？"}
+{"id": "Q29", "family_id": "F29", "category": "替代路径与多条件", "question": "根据 VasCog-2-WSO 2025，没有临床卒中或 TIA 史，但认知表现为渐进的注意／加工速度与执行功能下降，能否仅因“无卒中史”排除血管性病因？还应寻找哪类证据？"}
+{"id": "Q30", "family_id": "F30", "category": "跨栏限定与证据强度", "question": "根据 VasCog-2-WSO 2025，患者影像只有脑微出血或皮质表浅铁沉积，未满足 Box 2 B 所列主要影像标准。这些支持性表现本身是否足够满足血管性病因的影像条件？"}

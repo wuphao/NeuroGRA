@@ -1,0 +1,210 @@
+{
+  "$defs": {
+    "ConditionDraft": {
+      "additionalProperties": false,
+      "properties": {
+        "condition_text": {
+          "title": "Condition Text",
+          "type": "string"
+        },
+        "category": {
+          "enum": [
+            "population",
+            "method",
+            "threshold",
+            "time",
+            "prerequisite",
+            "exclusion",
+            "other"
+          ],
+          "title": "Category",
+          "type": "string"
+        },
+        "scope_hint": {
+          "title": "Scope Hint",
+          "type": "string"
+        },
+        "source_refs": {
+          "items": {
+            "$ref": "#/$defs/QuoteRef"
+          },
+          "minItems": 1,
+          "title": "Source Refs",
+          "type": "array"
+        }
+      },
+      "required": [
+        "condition_text",
+        "category",
+        "scope_hint",
+        "source_refs"
+      ],
+      "title": "ConditionDraft",
+      "type": "object"
+    },
+    "QuoteRef": {
+      "additionalProperties": false,
+      "properties": {
+        "block_id": {
+          "title": "Block Id",
+          "type": "string"
+        },
+        "quote": {
+          "minLength": 1,
+          "title": "Quote",
+          "type": "string"
+        },
+        "occurrence": {
+          "minimum": 0,
+          "title": "Occurrence",
+          "type": "integer"
+        }
+      },
+      "required": [
+        "block_id",
+        "quote",
+        "occurrence"
+      ],
+      "title": "QuoteRef",
+      "type": "object"
+    },
+    "StatementDraft": {
+      "additionalProperties": false,
+      "properties": {
+        "subject_text": {
+          "title": "Subject Text",
+          "type": "string"
+        },
+        "subject_type": {
+          "enum": [
+            "disease",
+            "syndrome",
+            "phenotype",
+            "examination",
+            "biomarker",
+            "other"
+          ],
+          "title": "Subject Type",
+          "type": "string"
+        },
+        "predicate": {
+          "enum": [
+            "supports",
+            "weakens",
+            "associated_with",
+            "distinguishes",
+            "limits"
+          ],
+          "title": "Predicate",
+          "type": "string"
+        },
+        "object_text": {
+          "title": "Object Text",
+          "type": "string"
+        },
+        "object_type": {
+          "enum": [
+            "disease",
+            "syndrome",
+            "phenotype",
+            "examination",
+            "biomarker",
+            "other"
+          ],
+          "title": "Object Type",
+          "type": "string"
+        },
+        "assertion_text": {
+          "title": "Assertion Text",
+          "type": "string"
+        },
+        "purposes": {
+          "items": {
+            "enum": [
+              "diagnostic_assessment",
+              "cognitive_assessment",
+              "imaging_interpretation",
+              "biomarker_interpretation",
+              "differential_diagnosis",
+              "follow_up"
+            ],
+            "type": "string"
+          },
+          "title": "Purposes",
+          "type": "array"
+        },
+        "condition_status": {
+          "enum": [
+            "explicit_unrestricted",
+            "unresolved"
+          ],
+          "title": "Condition Status",
+          "type": "string"
+        },
+        "source_refs": {
+          "items": {
+            "$ref": "#/$defs/QuoteRef"
+          },
+          "minItems": 1,
+          "title": "Source Refs",
+          "type": "array"
+        },
+        "field_evidence": {
+          "additionalProperties": {
+            "items": {
+              "$ref": "#/$defs/QuoteRef"
+            },
+            "type": "array"
+          },
+          "title": "Field Evidence",
+          "type": "object"
+        }
+      },
+      "required": [
+        "subject_text",
+        "subject_type",
+        "predicate",
+        "object_text",
+        "object_type",
+        "assertion_text",
+        "purposes",
+        "condition_status",
+        "source_refs",
+        "field_evidence"
+      ],
+      "title": "StatementDraft",
+      "type": "object"
+    }
+  },
+  "additionalProperties": false,
+  "properties": {
+    "statements": {
+      "items": {
+        "$ref": "#/$defs/StatementDraft"
+      },
+      "title": "Statements",
+      "type": "array"
+    },
+    "conditions": {
+      "items": {
+        "$ref": "#/$defs/ConditionDraft"
+      },
+      "title": "Conditions",
+      "type": "array"
+    },
+    "issues": {
+      "items": {
+        "type": "string"
+      },
+      "title": "Issues",
+      "type": "array"
+    }
+  },
+  "required": [
+    "statements",
+    "conditions",
+    "issues"
+  ],
+  "title": "ExtractionDraft",
+  "type": "object"
+}

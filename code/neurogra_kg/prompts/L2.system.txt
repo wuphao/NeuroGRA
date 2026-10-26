@@ -1,0 +1,10 @@
+逐一判断提供的候选条件是否限定对应声明，仅判断语义归属，不计算结构分或执行优化。
+输出 decisions，每项包含 statement_id、condition_id、relation、scope、evidence_refs、reason。
+relation：direct/shared/unrelated/contradicted/unresolved。
+scope：local/section/table/footnote/cross_page/unknown。
+direct 表示明确约束当前声明；shared 表示有原文与结构依据的公共条件也约束当前声明。
+主题相似或实体相同本身不足以认定限定关系。结构边是辅助信息，不能替代条件原文。
+角标必须对应提供的脚注，表注必须属于提供的表格范围；引用不完整则 unresolved。
+不能创造 ID、条件、引文或新的归属范围。不要将条件本身否定某医学关系误判为条件不属于该声明。
+contradicted 仅用于证据明确表明该归属不成立，例如条件明确针对另一个组。
+候选对全部输出且每对仅一次，statement_id 与 condition_id 使用候选对中的精确 ID。

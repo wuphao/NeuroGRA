@@ -1,0 +1,298 @@
+{
+  "$defs": {
+    "LogicAtomDraft": {
+      "additionalProperties": false,
+      "properties": {
+        "kind": {
+          "const": "ATOM",
+          "title": "Kind",
+          "type": "string"
+        },
+        "condition_id": {
+          "title": "Condition Id",
+          "type": "string"
+        },
+        "field": {
+          "title": "Field",
+          "type": "string"
+        },
+        "operator": {
+          "enum": [
+            "eq",
+            "ne",
+            "gt",
+            "gte",
+            "lt",
+            "lte",
+            "in",
+            "exists"
+          ],
+          "title": "Operator",
+          "type": "string"
+        },
+        "value": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "number"
+            },
+            {
+              "type": "boolean"
+            },
+            {
+              "items": {
+                "anyOf": [
+                  {
+                    "type": "string"
+                  },
+                  {
+                    "type": "number"
+                  }
+                ]
+              },
+              "type": "array"
+            }
+          ],
+          "title": "Value"
+        },
+        "unit": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "title": "Unit"
+        },
+        "method": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "title": "Method"
+        },
+        "time_scope": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "title": "Time Scope"
+        },
+        "population": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "title": "Population"
+        },
+        "source_refs": {
+          "items": {
+            "$ref": "#/$defs/QuoteRef"
+          },
+          "minItems": 1,
+          "title": "Source Refs",
+          "type": "array"
+        }
+      },
+      "required": [
+        "kind",
+        "condition_id",
+        "field",
+        "operator",
+        "value",
+        "unit",
+        "method",
+        "time_scope",
+        "population",
+        "source_refs"
+      ],
+      "title": "LogicAtomDraft",
+      "type": "object"
+    },
+    "LogicGroupDraft": {
+      "additionalProperties": false,
+      "properties": {
+        "kind": {
+          "enum": [
+            "ALL",
+            "ANY",
+            "NOT"
+          ],
+          "title": "Kind",
+          "type": "string"
+        },
+        "children": {
+          "items": {
+            "discriminator": {
+              "mapping": {
+                "ALL": "#/$defs/LogicGroupDraft",
+                "ANY": "#/$defs/LogicGroupDraft",
+                "ATOM": "#/$defs/LogicAtomDraft",
+                "NOT": "#/$defs/LogicGroupDraft",
+                "TEXT": "#/$defs/LogicTextDraft"
+              },
+              "propertyName": "kind"
+            },
+            "oneOf": [
+              {
+                "$ref": "#/$defs/LogicAtomDraft"
+              },
+              {
+                "$ref": "#/$defs/LogicTextDraft"
+              },
+              {
+                "$ref": "#/$defs/LogicGroupDraft"
+              }
+            ]
+          },
+          "maxItems": 32,
+          "minItems": 1,
+          "title": "Children",
+          "type": "array"
+        }
+      },
+      "required": [
+        "kind",
+        "children"
+      ],
+      "title": "LogicGroupDraft",
+      "type": "object"
+    },
+    "LogicTextDraft": {
+      "additionalProperties": false,
+      "properties": {
+        "kind": {
+          "const": "TEXT",
+          "title": "Kind",
+          "type": "string"
+        },
+        "condition_id": {
+          "title": "Condition Id",
+          "type": "string"
+        },
+        "text": {
+          "title": "Text",
+          "type": "string"
+        },
+        "source_refs": {
+          "items": {
+            "$ref": "#/$defs/QuoteRef"
+          },
+          "minItems": 1,
+          "title": "Source Refs",
+          "type": "array"
+        }
+      },
+      "required": [
+        "kind",
+        "condition_id",
+        "text",
+        "source_refs"
+      ],
+      "title": "LogicTextDraft",
+      "type": "object"
+    },
+    "QuoteRef": {
+      "additionalProperties": false,
+      "properties": {
+        "block_id": {
+          "title": "Block Id",
+          "type": "string"
+        },
+        "quote": {
+          "minLength": 1,
+          "title": "Quote",
+          "type": "string"
+        },
+        "occurrence": {
+          "minimum": 0,
+          "title": "Occurrence",
+          "type": "integer"
+        }
+      },
+      "required": [
+        "block_id",
+        "quote",
+        "occurrence"
+      ],
+      "title": "QuoteRef",
+      "type": "object"
+    }
+  },
+  "additionalProperties": false,
+  "properties": {
+    "statement_id": {
+      "title": "Statement Id",
+      "type": "string"
+    },
+    "root": {
+      "anyOf": [
+        {
+          "discriminator": {
+            "mapping": {
+              "ALL": "#/$defs/LogicGroupDraft",
+              "ANY": "#/$defs/LogicGroupDraft",
+              "ATOM": "#/$defs/LogicAtomDraft",
+              "NOT": "#/$defs/LogicGroupDraft",
+              "TEXT": "#/$defs/LogicTextDraft"
+            },
+            "propertyName": "kind"
+          },
+          "oneOf": [
+            {
+              "$ref": "#/$defs/LogicAtomDraft"
+            },
+            {
+              "$ref": "#/$defs/LogicTextDraft"
+            },
+            {
+              "$ref": "#/$defs/LogicGroupDraft"
+            }
+          ]
+        },
+        {
+          "type": "null"
+        }
+      ],
+      "title": "Root"
+    },
+    "unresolved_items": {
+      "items": {
+        "type": "string"
+      },
+      "title": "Unresolved Items",
+      "type": "array"
+    },
+    "logic_evidence": {
+      "items": {
+        "$ref": "#/$defs/QuoteRef"
+      },
+      "title": "Logic Evidence",
+      "type": "array"
+    }
+  },
+  "required": [
+    "statement_id",
+    "root",
+    "unresolved_items",
+    "logic_evidence"
+  ],
+  "title": "LogicDraft",
+  "type": "object"
+}

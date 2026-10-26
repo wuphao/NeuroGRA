@@ -1,0 +1,50 @@
+{
+  "$defs": {
+    "QuoteRef": {
+      "additionalProperties": false,
+      "properties": {
+        "block_id": {
+          "title": "Block Id",
+          "type": "string"
+        },
+        "quote": {
+          "minLength": 1,
+          "title": "Quote",
+          "type": "string"
+        },
+        "occurrence": {
+          "minimum": 0,
+          "title": "Occurrence",
+          "type": "integer"
+        }
+      },
+      "required": [
+        "block_id",
+        "quote",
+        "occurrence"
+      ],
+      "title": "QuoteRef",
+      "type": "object"
+    }
+  },
+  "additionalProperties": false,
+  "properties": {
+    "ok": {
+      "title": "Ok",
+      "type": "boolean"
+    },
+    "source_refs": {
+      "items": {
+        "$ref": "#/$defs/QuoteRef"
+      },
+      "title": "Source Refs",
+      "type": "array"
+    }
+  },
+  "required": [
+    "ok",
+    "source_refs"
+  ],
+  "title": "ProbeOutput",
+  "type": "object"
+}

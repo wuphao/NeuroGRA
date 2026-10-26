@@ -1,0 +1,12 @@
+data_root: data/kb
+output_root: output/kb
+chunk_chars: 1200
+overlap_chars: 120
+embedding:
+  base_url: http://127.0.0.1:11434
+  model: qwen3-embedding:0.6b
+  dimension: auto
+  batch_size: 4
+  concurrency: 1
+  timeout_seconds: 120
+  keep_alive: "0"

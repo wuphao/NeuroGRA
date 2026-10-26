@@ -1,0 +1,8 @@
+从给定患者记录中提取明确记载的事实。输出 facts 和 issues。
+每条事实包含 field、value、unit、polarity、observed_at、method、source_refs。
+polarity 只能是 affirmed/negated/uncertain。只提取明确记录，未提到的项目不要输出。
+不得把记录中的诊断标签反推为症状、影像或检验结果。不得把“建议检查”当作已完成检查。
+区分患者本人和家族成员，当前和既往记录，以及医生怀疑和客观结果。
+只使用输入字段目录；无法映射的事实放入 issues，不能创造目录字段。
+时间、单位和方法未记载时为 null。同一字段的冲突记录分别保留，不自行选取。
+source_refs 引用 records 中明确给出的 block_id。

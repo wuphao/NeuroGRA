@@ -1,0 +1,89 @@
+{
+  "$defs": {
+    "QuoteRef": {
+      "additionalProperties": false,
+      "properties": {
+        "block_id": {
+          "title": "Block Id",
+          "type": "string"
+        },
+        "quote": {
+          "minLength": 1,
+          "title": "Quote",
+          "type": "string"
+        },
+        "occurrence": {
+          "minimum": 0,
+          "title": "Occurrence",
+          "type": "integer"
+        }
+      },
+      "required": [
+        "block_id",
+        "quote",
+        "occurrence"
+      ],
+      "title": "QuoteRef",
+      "type": "object"
+    }
+  },
+  "additionalProperties": false,
+  "properties": {
+    "condition_id": {
+      "title": "Condition Id",
+      "type": "string"
+    },
+    "state": {
+      "enum": [
+        "SATISFIED",
+        "VIOLATED",
+        "UNKNOWN"
+      ],
+      "title": "State",
+      "type": "string"
+    },
+    "used_fact_ids": {
+      "items": {
+        "type": "string"
+      },
+      "title": "Used Fact Ids",
+      "type": "array"
+    },
+    "missing_fields": {
+      "items": {
+        "type": "string"
+      },
+      "title": "Missing Fields",
+      "type": "array"
+    },
+    "conflicts": {
+      "items": {
+        "type": "string"
+      },
+      "title": "Conflicts",
+      "type": "array"
+    },
+    "evidence_refs": {
+      "items": {
+        "$ref": "#/$defs/QuoteRef"
+      },
+      "title": "Evidence Refs",
+      "type": "array"
+    },
+    "reason": {
+      "title": "Reason",
+      "type": "string"
+    }
+  },
+  "required": [
+    "condition_id",
+    "state",
+    "used_fact_ids",
+    "missing_fields",
+    "conflicts",
+    "evidence_refs",
+    "reason"
+  ],
+  "title": "ApplicabilityOutput",
+  "type": "object"
+}

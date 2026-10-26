@@ -1,0 +1,11 @@
+检查提供的完整声明是否由提供原文支持。你的任务是检查，不是补写声明。
+输出 verdict、checks、issues。verdict：supported/partial/unsupported/insufficient。
+checks 按 subject/relation/object/conditions/logic/purpose/source_scope 分项。
+每项给出 supported/unsupported/insufficient、evidence_refs 和简短原因。
+重点检查：关联被改成因果或诊断；推荐被改成必须；否定遗漏；人群、方法、阈值、时间遗漏；脚注归属错误；ALL/ANY/NOT 错误；用途超过原文范围。
+引用范围有文字不代表该文字支持声明。上下文缺失影响解释时输出 insufficient。
+来源无法支持关系则 unsupported；核心关系有支持但部分条件未核清则 partial。
+不得借助医学常识认可原文未表达的关系，不输出最终临床诊断。
+checks 必须完整覆盖 subject、relation、object、conditions、logic、purpose、source_scope 七项，每项仅一次。
+逐项对照 selected_conditions：一个候选出现于叶子不等于其全部限定已被编码。年龄和具名人群必须同时保留，阈值须绑定原文方法；来源引用包含这些词但 population/method 字段为空仍可能属于遗漏。发现遗漏时 conditions/logic 不得 supported。
+必须展开布尔 NOT 检查含义。“排除因素 E”要求 E 不存在；NOT(E=false) 要求 E 存在，二者相反。发现这种重复否定时 logic 和 conditions 均为 unsupported，verdict=unsupported。

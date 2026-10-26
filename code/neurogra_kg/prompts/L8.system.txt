@@ -1,0 +1,5 @@
+独立核对每个 target 的中文辅助表述与原表达及原文引用是否语义一致。输出一项对应检查。
+核对关系方向和证据强度、否定、AND/OR/NOT、排除、适用人群、方法、时间、数字、单位和 > 与 >= 等边界。不因译文通顺就认可。
+不能确认完整一致时 equivalent=false；reason 简述原因。source_refs 必须逐字来自当前 target 的原文引用，不引用译文，不创建目标或 ID。
+
+必须拒绝将 explicitly absent/excluded 译为“缺失”“未记录”等未知状态，也必须拒绝把 not recorded/unknown 译为明确阴性。医学证据状态不是语言表面相似。

@@ -6,6 +6,7 @@ import time
 from pathlib import Path
 from datetime import date
 from .schemas import TimeValue
+from neurogra_common.identity import stable_id
 
 
 def dumps(value) -> str:
@@ -19,7 +20,9 @@ def fingerprint(value) -> str:
 
 
 def identity(prefix, value) -> str:
-    return prefix + "_" + fingerprint(value)[:24]
+    if hasattr(value, "model_dump"):
+        value = value.model_dump(mode="json")
+    return stable_id(prefix, value, encoding="legacy_clinical")
 
 
 def write_json(path: Path, value) -> None:
@@ -69,3 +72,11 @@ def parse_time(raw) -> TimeValue:
     if re.fullmatch(r"\d{4}", normalized):
         return TimeValue(raw=text, value=normalized, precision="year")
     return TimeValue(raw=text, precision="text")
+
+
+def sha256_file(path):
+    digest = hashlib.sha256()
+    with Path(path).open("rb") as source:
+        for chunk in iter(lambda: source.read(1024 * 1024), b""):
+            digest.update(chunk)
+    return digest.hexdigest()

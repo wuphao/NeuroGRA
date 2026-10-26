@@ -1,0 +1,28 @@
+{
+  "reports": [
+    {
+      "case_id": "case_001",
+      "method": "method_A",
+      "generation_model": "replace_with_actual_model",
+      "report_path": "../output/experiment/method_A/case_001/report.md",
+      "reference_path": "../output/report_evaluation/references/case_001.json",
+      "mask_tokens": ["replace_with_method_signature"]
+    },
+    {
+      "case_id": "case_001",
+      "method": "method_B",
+      "generation_model": "replace_with_actual_model",
+      "report_path": "../output/experiment/method_B/case_001/report.md",
+      "reference_path": "../output/report_evaluation/references/case_001.json",
+      "mask_tokens": []
+    },
+    {
+      "case_id": "case_001",
+      "method": "method_C",
+      "generation_model": "replace_with_actual_model",
+      "report_path": "../output/experiment/method_C/case_001/report.md",
+      "reference_path": "../output/report_evaluation/references/case_001.json",
+      "mask_tokens": []
+    }
+  ]
+}

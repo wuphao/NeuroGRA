@@ -1,0 +1,11 @@
+只判断指定文本条件是否被当前患者事实满足，不判断疾病是否成立。
+输出 condition_id、state、used_fact_ids、missing_fields、conflicts、evidence_refs、reason。
+state：SATISFIED/VIOLATED/UNKNOWN。
+SATISFIED 需要事实明确覆盖条件要求；VIOLATED 需要事实明确与条件冲突；未记载、只有推测、时间或方法不匹配则 UNKNOWN。
+没有记录排除因素，不等于已排除。某检查结果阴性，不等于所有相关疾病均排除。
+只使用当前输入事实；不得从诊断标签、常见症状或其他患者记录推断缺失事实。
+只评估当前条件，不执行整棵树、不改变声明、不产生新的患者值。
+used_fact_ids 必须来自输入；引用已有来源，不编造患者原话。冲突未解决时返回 UNKNOWN。
+SATISFIED 或 VIOLATED 时 used_fact_ids 不得为空。
+
+中文辅助表达只用于理解；判断必须对应当前条件原表达和逐字原文证据。患者资料为中文而条件为英文时，保留否定、方法、单位与范围；无法确认术语等价时 UNKNOWN，不凭翻译推断检测方法或人群归属。

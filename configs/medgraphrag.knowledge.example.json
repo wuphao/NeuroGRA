@@ -1,0 +1,19 @@
+{
+  "version": "replace-with-frozen-corpus-version",
+  "documents": [
+    {
+      "id": "terminology-01",
+      "layer": "bottom",
+      "path": "../data/baselines/medgraphrag/terminology.txt",
+      "source": "Replace with actual dictionary source and version",
+      "license_note": "Replace with actual permitted use and license"
+    },
+    {
+      "id": "guideline-01",
+      "layer": "middle",
+      "path": "../data/baselines/medgraphrag/guideline.pdf",
+      "source": "Replace with actual guideline title and source",
+      "license_note": "Replace with actual permitted use and license"
+    }
+  ]
+}

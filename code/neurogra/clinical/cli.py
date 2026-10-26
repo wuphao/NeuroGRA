@@ -7,9 +7,9 @@ from .service import create_context, prepare_patient
 from .storage import RunStore
 from .llm import ModelGateway
 from .diagnostics import probe_capabilities
-from .retrieval import KnowledgeService, pin_release
-from .schemas import RetrievalRequest
-from .utils import write_json
+from .retrieval import pin_release
+from .schemas import CaseSnapshot, RequestContent
+from .utils import write_json, identity
 
 
 def main():
@@ -26,7 +26,8 @@ def main():
     narrative = sub.add_parser('write-narrative')
     narrative.add_argument('--run-id', required=True)
     sub.add_parser('validate-diamond')
-    sub.add_parser('build-vector-index')
+    index = sub.add_parser('inspect-knowledge-index')
+    index.add_argument('--module', choices=['kb', 'kg'], default='kb')
     evaluation = sub.add_parser('evaluate-retrieval')
     evaluation.add_argument('--queries', required=True)
     evaluation.add_argument('--top-k', type=int, default=5)
@@ -41,12 +42,10 @@ def main():
     prepare.add_argument("--query")
     search = sub.add_parser("search")
     search.add_argument("--query", required=True)
-    search.add_argument("--term", action="append", default=[])
     inspect = sub.add_parser("inspect-run")
     inspect.add_argument("--run-id", required=True)
     args = parser.parse_args()
-    config = load_config(args.config or ('configs/clinical.rwe.yaml' if args.command == 'analyze-rwe'
-                                         else 'configs/clinical.default.yaml'))
+    config = load_config(args.config) if args.config else load_config()
     if args.command == 'analyze-rwe':
         from .rwe import analyze_rwe, load_rwe_config, RweFailure
         try:
@@ -72,11 +71,20 @@ def main():
         path, result = evaluate_retrieval(config, args.queries, args.top_k)
         print(json.dumps({'artifact_path': str(path), 'run_id': result['run_id'], 'aggregate': result['aggregate'],
                           'annotation_status': result['annotation_status']}, ensure_ascii=False, indent=2))
-    elif args.command == 'build-vector-index':
-        from .vector import build_index
-        path, manifest = build_index(config, pin_release(config))
-        print(json.dumps({'index_manifest': str(path), 'index_id': manifest.index_id,
-                          'dimension': manifest.dimension, 'chunks': len(manifest.chunk_ids)}, ensure_ascii=False, indent=2))
+    elif args.command == 'inspect-knowledge-index':
+        if args.module == 'kb':
+            from .main_tools import MainToolExecutor
+            store, run_id = create_context(config)
+            snapshot = CaseSnapshot(case_id=identity('case', run_id), patient_id=identity('no_patient', run_id),
+                                    raw_input_hash=identity('input', []), records=[])
+            tools = MainToolExecutor(snapshot, config, store, run_id)
+            result = tools.text.get_release(tools.text_release_id) if tools.text and tools.text_release_id else {'status': 'not_published'}
+            store.status(run_id, 'completed')
+        else:
+            from .knowledge_adapter import service
+            with service(config) as kg:
+                result = kg.inspect_vector_index(pin_release(config))
+        print(json.dumps(result, ensure_ascii=False, indent=2))
     elif args.command == 'validate-diamond':
         from .diamond import model_profile, run_process
         profile = model_profile(config)
@@ -112,12 +120,20 @@ def main():
                 gateway = ModelGateway(config.model, store, run_id) if args.model_smoke else None
                 result = probe_capabilities(config, gateway)
             else:
-                result = KnowledgeService(config, pin_release(config), store, run_id).search_knowledge(
-                    RetrievalRequest(request_id="cli_search", question=args.query, candidate_terms=args.term))
+                from .main_tools import MainToolExecutor
+                try:
+                    release_id = pin_release(config)
+                except Exception:
+                    release_id = None
+                snapshot = CaseSnapshot(case_id=identity('case', run_id), patient_id=identity('no_patient', run_id),
+                                        raw_input_hash=identity('input', []), records=[])
+                tools = MainToolExecutor(snapshot, config, store, run_id, graph_release_id=release_id)
+                result = tools.execute(RequestContent(type='knowledge', question=args.query,
+                    reason='独立知识查询，无患者资料，不形成临床判断'), scope='cli_search')
             path = config.resolve(config.output_root) / run_id / (args.command + ".json")
             write_json(path, result)
             store.status(run_id, "completed")
-            print(json.dumps({"run_id": run_id, "artifact_path": str(path), "result": result.model_dump(mode="json")},
+            print(json.dumps({"run_id": run_id, "artifact_path": str(path), "result": result.model_dump(mode="json") if hasattr(result, 'model_dump') else result},
                              ensure_ascii=False, indent=2))
         except Exception:
             store.status(run_id, "failed")

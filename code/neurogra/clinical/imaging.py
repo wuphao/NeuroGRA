@@ -1,7 +1,7 @@
 """Imaging reports remain independent of gated classifier output."""
 from .specialists import SourceSpecialist, items
 from .history import SYSTEM
-from .schemas import AgentResult, RetrievalRequest, Issue
+from .schemas import AgentResult, RequestContent, Issue
 from .llm import ModelFailure
 from .storage import BudgetExceeded
 from .utils import identity
@@ -26,20 +26,20 @@ class ImagingAgent(SourceSpecialist):
         else:
             result = AgentResult(result_id=identity('result', task.task_id), task_id=task.task_id,
                 case_version=task.case_version, status='partial', used_refs=list(task.input_refs))
-            try:
-                await context.tools.search_knowledge(RetrievalRequest(request_id=identity('imaging_search', task.task_id),
-                    question='MRI T1 FDG PET 阿尔茨海默病影像评估适用条件', top_k=3))
-            except (ValueError, ModelFailure, BudgetExceeded, TimeoutError) as exc:
-                result.issues.append(Issue(code='imaging_retrieval_unavailable', stage='imaging', message=type(exc).__name__))
-        if context.snapshot.images:
-            prediction = await context.tools.diamond_predict()
+        if context.image_result is not None:
+            from .diamond import DiamondResult
+            prediction = DiamondResult.model_validate(context.image_result)
             if prediction.status == 'completed':
                 result.model_results = [prediction.result_id]
-                result.status = 'completed' if not result.issues else 'partial'
+                result.status = 'completed' if not result.issues and result.status == 'completed' else 'partial'
                 result.uncertainties.append('DiaMond类别分数未经临床概率校准，不能从分类输出推断脑区定位。')
             else:
                 result.status = 'partial'
                 result.uncertainties.extend([f'DiaMond：{prediction.status}'] + prediction.warnings)
+        elif any(image.status == 'available' for image in context.snapshot.images):
+            result.requests.append(RequestContent(type='imaging_tool', question='是否可执行现有影像的验证门控分类？',
+                source_refs=[image.asset_id for image in context.snapshot.images], reason='存在影像但未提供计算结果'))
+            result.uncertainties.append('未提供工具执行结果，等待主Agent决定是否调用影像工具。')
         else:
-            result.uncertainties.append('仅有报告文本，未执行DiaMond模型分类。')
+            result.uncertainties.append('无可执行的原始影像，未执行DiaMond模型分类。')
         return result

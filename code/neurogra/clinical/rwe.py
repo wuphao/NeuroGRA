@@ -51,6 +51,7 @@ def local_settings(path):
 class RweClient:
     def __init__(self, config, settings):
         self.config, self.settings = config, settings
+        self._token = None
 
     def resolve_patient(self, patient_number):
         if not isinstance(patient_number, str) or not patient_number.strip():
@@ -88,7 +89,17 @@ class RweClient:
             import requests
         except ImportError:
             raise RweFailure('rwe_dependency_missing:requests') from None
-        token = self.settings.get('RWE_API_TOKEN', '').strip()
+        token = self._token or self.settings.get('RWE_API_TOKEN', '').strip()
+        if self.settings.get('RWE_LOGIN_ACCOUNT'):
+            from .rwe_auth import obtain_token, AuthenticationFailure
+            try:
+                self._token = self._token or obtain_token(requests,
+                    self.settings.get('RWE_API_BASE_URL', 'http://localhost:8081'),
+                    self.settings['RWE_LOGIN_ACCOUNT'], self.settings.get('RWE_LOGIN_PASSWORD', ''),
+                    timeout=self.config.timeout_seconds)
+                token = self._token
+            except AuthenticationFailure:
+                raise RweFailure('rwe_authentication_failed') from None
         if not token:
             raise RweFailure('rwe_token_missing')
         authorization = token if token.lower().startswith('bearer ') else 'Bearer ' + token
@@ -181,8 +192,9 @@ def analyze_rwe(patient_number, config, rwe_config, on_run_created=None):
     if on_run_created is not None:
         on_run_created(run_id)
     with store.workflow_lock(run_id):
-        from neurogra.knowledge.utils import sha256_file
+        from .utils import sha256_file
         store.save(run_id, 'rwe_source', 'main', {'path': str(source_path), 'sha256': sha256_file(source_path),
+                   'rwe_config': rwe_config.model_dump(mode='json'),
                    'export_id': export['export_id'], 'issues': export['issues'],
                    'forms': [{k: v for k, v in f.items() if k != 'records'} | {'record_count': len(f['records'])}
                              for f in export['forms']]})

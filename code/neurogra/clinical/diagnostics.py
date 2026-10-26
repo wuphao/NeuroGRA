@@ -39,36 +39,41 @@ def probe_capabilities(config: ClinicalConfig, gateway=None) -> CapabilityReport
     except Exception as exc:
         report.components.append(Capability(name="knowledge", configured=True, available=False,
                                             details={"error_type": type(exc).__name__}))
+    from .knowledge_adapter import service as knowledge_service
     try:
-        settings, _ = knowledge_settings(config)
-        graph = settings.graph_store
-        configured = graph.provider == "neo4j"
-        if configured:
-            from neo4j import GraphDatabase
-            with GraphDatabase.driver(graph.uri, auth=(graph.username, graph.resolve_password()),
-                                      connection_timeout=5, connection_acquisition_timeout=5) as driver:
-                driver.verify_connectivity()
-        report.components.append(Capability(name="graph", configured=configured, available=configured, verified=configured))
+        from neurogra_kb import KBConfig, TextKnowledgeService, load_config as load_kb
+        path = config.resolve(config.text_knowledge_config) if config.text_knowledge_config else None
+        kb_config = load_kb(path) if path and path.is_file() else KBConfig(root=config.project_root)
+        kb = TextKnowledgeService(kb_config.model_copy(update={'root': config.project_root}))
+        release_id = config.text_knowledge_release_id or kb.active_release()
+        manifest = kb.get_release(release_id) if release_id else None
+        report.components.append(Capability(name='text_knowledge', configured=config.text_knowledge_config is not None,
+            available=manifest is not None, verified=manifest is not None,
+            details={'release_id': release_id, 'resources': manifest['resource_count'] if manifest else 0,
+                     'vector_published': manifest['vector'] if manifest else False, 'query_executed': False}))
+    except Exception as exc:
+        report.components.append(Capability(name='text_knowledge', configured=config.text_knowledge_config is not None,
+            available=False, details={'error_type': type(exc).__name__}))
+    try:
+        with knowledge_service(config) as kg:
+            info = kg.probe_graph()
+        configured = info.get("provider") == "neo4j"
+        report.components.append(Capability(name="graph", configured=configured,
+            available=bool(info.get("available")), verified=bool(info.get("available")), details=info))
     except Exception as exc:
         report.components.append(Capability(name="graph", configured=True, available=False,
-                                            details={"error_type": type(exc).__name__}))
+            details={"error_type": type(exc).__name__}))
     try:
-        if not config.vector_enabled or not config.vector.index_manifest:
-            raise ValueError('vector_not_configured')
-        from .retrieval import readonly_repository
-        from .vector import release_chunks, embedding_client
-        from neurogra.knowledge.indexing.vector import VectorRetriever
-        _, db = knowledge_settings(config)
-        with readonly_repository(db) as repository:
-            vector = VectorRetriever(config.resolve(config.vector.index_manifest), release_chunks(repository, release_id),
-                                     release_id, embedding_client(config), config.vector.max_chars)
-        if vector.client.model_digest() != vector.manifest.model_digest:
-            raise ValueError('embedding_model_digest_mismatch')
-        report.components.append(Capability(name='vector', configured=True, available=True, verified=True,
-            details={'index_id': vector.manifest.index_id, 'dimension': vector.manifest.dimension, 'query_executed': False}))
+        if not config.vector_enabled:
+            raise ValueError("vector_not_configured")
+        with knowledge_service(config) as kg:
+            index = kg.inspect_vector_index(config.knowledge_release_id)
+        report.components.append(Capability(name="vector", configured=True, available=True, verified=True,
+            details={"release_id": index["release_id"], "dimension": index["dimension"],
+                     "model": index["model"], "query_executed": False}))
     except Exception as exc:
-        report.components.append(Capability(name='vector', configured=config.vector_enabled, available=False,
-            details={'error_type': type(exc).__name__, 'query_executed': False}))
+        report.components.append(Capability(name="vector", configured=config.vector_enabled, available=False,
+            details={"error_type": type(exc).__name__, "query_executed": False}))
     checks = {"repo": config.diamond_root.is_dir(), "python": config.diamond_python.is_file(),
               "checkpoint": config.diamond_checkpoint.is_file(),
               "raw_entrypoint": (config.diamond_root / "tools/predict_diamond_raw.py").is_file()}

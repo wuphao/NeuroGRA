@@ -2,7 +2,8 @@
 import json
 from pathlib import Path
 from .schemas import RetrievalRequest
-from .retrieval import KnowledgeService, pin_release, readonly_repository, knowledge_settings
+from .retrieval import KnowledgeService, pin_release
+from .knowledge_adapter import service as knowledge_service
 from .service import create_context
 from .utils import write_json
 
@@ -27,10 +28,8 @@ def evaluate_retrieval(config, query_path, k=5):
         raise ValueError('empty_or_duplicate_queries')
     if {q['split'] for q in queries} != {'dev', 'heldout'}:
         raise ValueError('requires_dev_and_heldout')
-    from .vector import release_chunks
-    _, db = knowledge_settings(config)
-    with readonly_repository(db) as repository:
-        allowed = {s for chunk in release_chunks(repository, release) for s in chunk.span_ids}
+    with knowledge_service(config) as kg:
+        allowed = set(kg.list_source_ids(release))
         for query in queries:
             if not query['relevant_span_ids'] or not set(query['relevant_span_ids']) <= allowed:
                 raise ValueError('invalid_relevance_labels')

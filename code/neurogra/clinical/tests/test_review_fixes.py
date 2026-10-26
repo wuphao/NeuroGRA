@@ -117,21 +117,18 @@ class RetrievalDeadlineTests(unittest.TestCase):
         self.store = RunStore(self.config.resolve(self.config.database))
         self.run = self.store.create_run({}, {'retrieval': 5, 'llm': 0, 'image': 0, 'seconds': 30})
 
-    def test_proxy_passes_task_deadline(self):
-        from neurogra.clinical.orchestration import ToolProxy
-        from neurogra.clinical.schemas import AgentTask, CaseSnapshot, RetrievalRequest, EvidenceBundle
-        seen = []
-        class Knowledge:
-            def search_knowledge(self, request, deadline=None):
-                seen.append(deadline)
-                return EvidenceBundle(bundle_id='b', request_id=request.request_id, status='empty', backend_status={})
+    def test_analysis_runtime_has_deadline_and_no_external_capabilities(self):
+        from neurogra.clinical.orchestration import AnalysisRuntime
+        from neurogra.clinical.schemas import AgentTask
+        from neurogra.clinical.config import ModelConfig
         task = AgentTask(task_id='t', agent_type='history', case_version=1, input_refs=['o'],
-                         questions=['q'], why='test', permitted_tools=['search_knowledge'])
+                         questions=['q'], why='test', permitted_tools=[])
         task.budget.timeout_seconds = .5
-        snapshot = CaseSnapshot(case_id='c', patient_id='p', raw_input_hash='h', records=[])
-        proxy = ToolProxy(task, snapshot, Knowledge(), self.store, self.run)
-        asyncio.run(proxy.search_knowledge(RetrievalRequest(request_id='q', question='q')))
-        self.assertEqual(seen, [proxy.deadline])
+        runtime = AnalysisRuntime(task, self.store, self.run, ModelConfig())
+        self.assertLessEqual(runtime.deadline, time.time() + .5)
+        self.assertEqual(runtime.gateway.deadline, runtime.deadline)
+        for name in ('search_knowledge', 'diamond_predict', 'read_case_record', 'fetch_patient_data'):
+            self.assertFalse(hasattr(runtime, name))
 
     def test_expired_request_does_not_reserve_or_launch(self):
         from neurogra.clinical.retrieval import KnowledgeService
@@ -187,9 +184,9 @@ class RetrievalDeadlineTests(unittest.TestCase):
         class Agent:
             async def analyze(self, task, context):
                 if task.agent_type == 'history':
-                    await context.tools.search_knowledge(RetrievalRequest(request_id='q', question='q', requested_backends=['bm25']))
+                    await asyncio.sleep(1)
                 return AgentResult(result_id=task.task_id, task_id=task.task_id, case_version=1, status='completed')
-        executor = Executor(self.store, self.run, service)
+        executor = Executor(self.store, self.run)
         executor.register('history', Agent()); executor.register('cognition', Agent())
         start = time.monotonic()
         with patch.object(service, '_run_backend', side_effect=slow):

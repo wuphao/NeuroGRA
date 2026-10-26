@@ -1,0 +1,65 @@
+schema_version: '1'
+paths:
+  data_root: data/kg
+  output_root: output/kg
+llm:
+  provider: ollama
+  base_url: http://127.0.0.1:11434
+  model: qwen3.8:27b
+  temperature: 0
+  concurrency: 1
+  timeout_seconds: 300
+  max_transport_attempts: 2
+  max_format_repair_attempts: 1
+  context_tokens: 16384
+  max_output_tokens: 4096
+  max_input_chars: 14000
+  thinking: disabled
+  structured_output: json_schema
+  keep_alive: 5m
+embedding:
+  provider: ollama
+  base_url: http://127.0.0.1:11434
+  model: qwen3-embedding:0.6b
+  dimension: auto
+  batch_size: 4
+  concurrency: 1
+  timeout_seconds: 120
+  normalize: l2
+  truncate: false
+  query_template_version: raw_query_v1
+  document_template_version: raw_document_v1
+  keep_alive: 5m
+construction:
+  alignment_weights:
+    structure: 0.5
+    entity: 0.2
+    semantic: 0.3
+  alignment_threshold: 0.55
+  prompt_version: v1
+  parser: pymupdf
+  unit_max_chars: 600
+retrieval:
+  lexical_top_k: 30
+  vector_top_k: 30
+  graph_top_k: 30
+  graph_max_hops: 2
+  rrf_k: 60
+  top_k: 10
+  max_supplement_rounds: 2
+  allow_explicit_degradation: true
+completion:
+  enabled: false
+  model_type: complex
+  max_candidate_edges: 10
+  dimension: 64
+  epochs: 200
+  learning_rate: 0.01
+  seed: 42
+graph:
+  provider: neo4j
+  uri: bolt://127.0.0.1:7687
+  username: neo4j
+  password_env: NEUROGRA_KG_NEO4J_PASSWORD
+  password_file: output/kg/neo4j/local_credentials.json
+  database: neo4j

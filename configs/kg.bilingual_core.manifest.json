@@ -1,0 +1,56 @@
+{
+  "documents": [
+    {
+      "path": "docs/references/neurogra_kg_core/01_DETeCD_ADRD_Specialty_2025.pdf",
+      "title": "DETeCD-ADRD specialty care",
+      "version": "1",
+      "language": "en"
+    },
+    {
+      "path": "docs/references/neurogra_kg_core/02_Albert_MCI_AD_2011.pdf",
+      "title": "Albert 2011: AD 所致 MCI 诊断建议",
+      "version": "1",
+      "language": "en"
+    },
+    {
+      "path": "docs/references/neurogra_kg_core/03_McKhann_AD_Dementia_2011.pdf",
+      "title": "McKhann 2011: AD 痴呆诊断建议",
+      "version": "1",
+      "language": "en"
+    },
+    {
+      "path": "docs/references/neurogra_kg_core/04_Jack_AD_Criteria_2024.pdf",
+      "title": "Revised criteria for diagnosis and staging of Alzheimer disease",
+      "version": "1",
+      "language": "en"
+    },
+    {
+      "path": "docs/references/neurogra_kg_core/05_Palmqvist_Blood_Biomarkers_2025.pdf",
+      "title": "Blood-based biomarkers guideline",
+      "version": "1",
+      "language": "en"
+    },
+    {
+      "path": "docs/references/neurogra_kg_core/06_McKeith_DLB_Consensus_2017.pdf",
+      "title": "Fourth consensus report of the DLB Consortium",
+      "version": "1",
+      "language": "en"
+    },
+    {
+      "path": "docs/references/neurogra_kg_core/07_Rascovsky_bvFTD_Criteria_2011.pdf",
+      "title": "Sensitivity of revised diagnostic criteria for behavioural variant frontotemporal dementia",
+      "version": "1",
+      "language": "en"
+    },
+    {
+      "path": "docs/references/neurogra_kg_core/08_VasCog_2_WSO_2025.pdf",
+      "title": "VasCog-2-WSO 2025: 血管性认知障碍修订标准",
+      "version": "1",
+      "language": "en"
+    }
+  ],
+  "corpus_version": "neurogra-bilingual-core-v1",
+  "max_seconds": 28800,
+  "max_llm_calls": 10000,
+  "max_embedding_calls": 10000
+}

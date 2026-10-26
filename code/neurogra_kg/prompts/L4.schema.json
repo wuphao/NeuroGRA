@@ -1,0 +1,110 @@
+{
+  "$defs": {
+    "FieldCheck": {
+      "additionalProperties": false,
+      "properties": {
+        "field": {
+          "enum": [
+            "subject",
+            "relation",
+            "object",
+            "conditions",
+            "logic",
+            "purpose",
+            "source_scope"
+          ],
+          "title": "Field",
+          "type": "string"
+        },
+        "state": {
+          "enum": [
+            "supported",
+            "unsupported",
+            "insufficient"
+          ],
+          "title": "State",
+          "type": "string"
+        },
+        "evidence_refs": {
+          "items": {
+            "$ref": "#/$defs/QuoteRef"
+          },
+          "title": "Evidence Refs",
+          "type": "array"
+        },
+        "reason": {
+          "title": "Reason",
+          "type": "string"
+        }
+      },
+      "required": [
+        "field",
+        "state",
+        "evidence_refs",
+        "reason"
+      ],
+      "title": "FieldCheck",
+      "type": "object"
+    },
+    "QuoteRef": {
+      "additionalProperties": false,
+      "properties": {
+        "block_id": {
+          "title": "Block Id",
+          "type": "string"
+        },
+        "quote": {
+          "minLength": 1,
+          "title": "Quote",
+          "type": "string"
+        },
+        "occurrence": {
+          "minimum": 0,
+          "title": "Occurrence",
+          "type": "integer"
+        }
+      },
+      "required": [
+        "block_id",
+        "quote",
+        "occurrence"
+      ],
+      "title": "QuoteRef",
+      "type": "object"
+    }
+  },
+  "additionalProperties": false,
+  "properties": {
+    "verdict": {
+      "enum": [
+        "supported",
+        "partial",
+        "unsupported",
+        "insufficient"
+      ],
+      "title": "Verdict",
+      "type": "string"
+    },
+    "checks": {
+      "items": {
+        "$ref": "#/$defs/FieldCheck"
+      },
+      "title": "Checks",
+      "type": "array"
+    },
+    "issues": {
+      "items": {
+        "type": "string"
+      },
+      "title": "Issues",
+      "type": "array"
+    }
+  },
+  "required": [
+    "verdict",
+    "checks",
+    "issues"
+  ],
+  "title": "VerificationOutput",
+  "type": "object"
+}

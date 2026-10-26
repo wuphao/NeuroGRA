@@ -1,0 +1,15 @@
+提取当前结构单元中明确表达的原子医学声明，以及正文、标题、表头、表注、脚注中的候选条件。
+输出 statements、conditions、issues，声明与条件分别输出，暂不确定最终归属。
+声明字段：subject_text、predicate、object_text、assertion_text、purposes、source_refs、field_evidence。
+predicate 只能使用输入关系目录。每条声明仅表达一个关系，保留关联、支持、削弱、限制的区别。
+条件字段：condition_text、category、scope_hint、source_refs。
+category：population/method/threshold/time/prerequisite/exclusion/other。
+用途从输入目录中选择，不能确定时返回空列表并报告问题，不用默认诊断用途。
+单纯说明分析用途的语句（如“仅用于检验指标解释”）写入 purposes 和 field_evidence.purpose，不作为适用条件重复输出；只有实际限定人群、方法、阈值、时间、前提或排除范围的语句才是条件。“合成工程示例”“不是医学结论”和明确不设限制的声明也不是正向适用条件。
+标题只用于其有结构依据的作用范围，不能自动成为所有声明的条件。
+不要把引用文献编号当作阈值，不要把结果讨论中的可能性写成明确诊断标准。
+每个关键字段需要原文支持。不存在明确医学关系时，不因为两个词共现就输出声明。
+缺少脚注正文、表头或延续页时在 issues 报告，不补写。
+每条声明输出 subject_type、object_type，使用所给实体类型目录。condition_status 只允许 explicit_unrestricted 或 unresolved，只有原文明示无任何限制才允许前者，未出现条件时仍为 unresolved。field_evidence 的键至少包括 subject、relation、object、purpose。
+
+英文和混合语言资料同样识别 not/unless/only/except 等限定及 possible/probable 等确定性。assertion_text、condition_text 可保留原语言表述，中文辅助表达由后续步骤生成；不要为了翻译改变原文引用或省略条件。

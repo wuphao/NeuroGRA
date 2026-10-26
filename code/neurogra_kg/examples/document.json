@@ -1,0 +1,10 @@
+{
+  "blocks": [
+    {"block_id": "heading", "page": 1, "order": 0, "kind": "heading", "heading_level": 1,
+     "text": "示例规则：方法与排除条件（纯合成工程样例）"},
+    {"block_id": "claim", "page": 1, "order": 1, "kind": "paragraph", "reference_markers": ["*"],
+     "text": "在示例方法 M 下，指标 X 大于 10 时支持状态 D。此规则只用于示例用途：检验指标解释。*"},
+    {"block_id": "note", "page": 1, "order": 2, "kind": "footnote", "marker": "*",
+     "text": "* 仅适用于年龄不小于 18 的示例人群，且必须明确排除因素 E。"}
+  ]
+}

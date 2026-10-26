@@ -1,0 +1,10 @@
+{
+  "reviewed": false,
+  "source_is_complete": false,
+  "cutoff": "2025-01-01",
+  "trim_mode": "short",
+  "undated_forms_allowed": [],
+  "exclude_pointers": {
+    "/forms/dicom_basic_info/records/0/患病情况": "Example only: remove directly revealing disease status; replace with actual audited pointers"
+  }
+}

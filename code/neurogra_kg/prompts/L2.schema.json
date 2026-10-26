@@ -1,0 +1,102 @@
+{
+  "$defs": {
+    "AlignmentDecision": {
+      "additionalProperties": false,
+      "properties": {
+        "statement_id": {
+          "title": "Statement Id",
+          "type": "string"
+        },
+        "condition_id": {
+          "title": "Condition Id",
+          "type": "string"
+        },
+        "relation": {
+          "enum": [
+            "direct",
+            "shared",
+            "unrelated",
+            "contradicted",
+            "unresolved"
+          ],
+          "title": "Relation",
+          "type": "string"
+        },
+        "scope": {
+          "enum": [
+            "local",
+            "section",
+            "table",
+            "footnote",
+            "cross_page",
+            "unknown"
+          ],
+          "title": "Scope",
+          "type": "string"
+        },
+        "evidence_refs": {
+          "items": {
+            "$ref": "#/$defs/QuoteRef"
+          },
+          "title": "Evidence Refs",
+          "type": "array"
+        },
+        "reason": {
+          "title": "Reason",
+          "type": "string"
+        }
+      },
+      "required": [
+        "statement_id",
+        "condition_id",
+        "relation",
+        "scope",
+        "evidence_refs",
+        "reason"
+      ],
+      "title": "AlignmentDecision",
+      "type": "object"
+    },
+    "QuoteRef": {
+      "additionalProperties": false,
+      "properties": {
+        "block_id": {
+          "title": "Block Id",
+          "type": "string"
+        },
+        "quote": {
+          "minLength": 1,
+          "title": "Quote",
+          "type": "string"
+        },
+        "occurrence": {
+          "minimum": 0,
+          "title": "Occurrence",
+          "type": "integer"
+        }
+      },
+      "required": [
+        "block_id",
+        "quote",
+        "occurrence"
+      ],
+      "title": "QuoteRef",
+      "type": "object"
+    }
+  },
+  "additionalProperties": false,
+  "properties": {
+    "decisions": {
+      "items": {
+        "$ref": "#/$defs/AlignmentDecision"
+      },
+      "title": "Decisions",
+      "type": "array"
+    }
+  },
+  "required": [
+    "decisions"
+  ],
+  "title": "AlignmentOutput",
+  "type": "object"
+}

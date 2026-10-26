@@ -1,0 +1,5 @@
+{
+  "documents": [{"path": "code/neurogra_kg/examples/document.json", "title": "合成条件规则", "version": "1"}],
+  "corpus_version": "engineering-example-v1",
+  "max_seconds": 1200
+}

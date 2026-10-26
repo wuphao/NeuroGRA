@@ -38,17 +38,16 @@ class SourceSpecialist(HistoryAgent):
         try:
             result = await super().analyze(task, context)
         except (ModelFailure, BudgetExceeded, TimeoutError, ValueError) as exc:
+            from .agent_state import coverage
+            facts = context.snapshot.observations
+            failed = [o.observation_id for o in facts] if isinstance(exc, (ModelFailure, ValueError)) else []
+            deferred = [o.observation_id for o in facts] if not failed else []
             result = AgentResult(result_id=identity('result', task.task_id), task_id=task.task_id,
                 case_version=task.case_version, status='partial', used_refs=[o.observation_id for o in context.snapshot.observations],
+                coverage=coverage(facts, failed=failed, deferred=deferred),
                 issues=[Issue(code='specialist_facts_fallback', stage=self.role, message=type(exc).__name__)],
                 uncertainties=['模型或检索未完成，专业结构仅整理原始资料，不代表模型分析已成功。'])
         return self.constrain(result, context.snapshot)
-
-    async def review(self, request, previous, snapshot, evidence, gateway):
-        response = await super().review(request, previous, snapshot, evidence, gateway)
-        if response.revised_result:
-            response.revised_result = self.constrain(response.revised_result, snapshot)
-        return response
 
     def restrict(self, result, rows):
         restricted = {r.observation_id for r in rows if r.missing_context or r.status in {'not_recorded', 'not_performed'}}

@@ -173,17 +173,12 @@ def make_server(app, port=8767):
     return ThreadingHTTPServer(('127.0.0.1', port), Handler)
 
 
-def main():
-    parser = argparse.ArgumentParser(description='NeuroGRA local web workbench')
-    parser.add_argument('--port', type=int, default=8767)
-    parser.add_argument('--config', default='configs/clinical.rwe.yaml')
-    parser.add_argument('--rwe-config', default='configs/rwe.project8.yaml')
-    args = parser.parse_args()
-    config = load_config(args.config)
+def serve(config, rwe_config, port=8767):
+    """Start the workbench with already constructed Python configuration objects."""
     store = RunStore(config.resolve(config.database))
     with store.workflow_lock('web_service'):
-        app = Workbench(config, load_rwe_config(config.resolve(Path(args.rwe_config))))
-        server = make_server(app, args.port)
+        app = Workbench(config, rwe_config)
+        server = make_server(app, port)
         print(f'NeuroGRA: http://127.0.0.1:{server.server_port}', flush=True)
         try:
             server.serve_forever()
@@ -191,6 +186,16 @@ def main():
             pass
         finally:
             server.server_close()
+
+
+def main():
+    parser = argparse.ArgumentParser(description='NeuroGRA local web workbench')
+    parser.add_argument('--port', type=int, default=8767)
+    parser.add_argument('--config', default='configs/clinical.rwe.yaml')
+    parser.add_argument('--rwe-config', default='configs/rwe.project8.yaml')
+    args = parser.parse_args()
+    config = load_config(args.config)
+    serve(config, load_rwe_config(config.resolve(Path(args.rwe_config))), args.port)
 
 
 if __name__ == '__main__':

@@ -11,6 +11,7 @@ htmlcov/
 
 # Virtual environments
 .venv/
+.venv-acceptance/
 venv/
 env/
 
@@ -64,3 +65,11 @@ docs/病例报告/
 
 # Office temporary lock files
 ~$*
+
+# Rebuildable Python distribution artifacts
+/build/
+/dist/
+
+# Browser acceptance artifacts and local test data
+/testing/runs/
+/configs/rwe_batch_patients.txt

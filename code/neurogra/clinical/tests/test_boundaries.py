@@ -48,55 +48,25 @@ class BoundaryTests(unittest.TestCase):
         snapshot = profile_case(intake, [parsed], self.config)
         self.assertEqual(snapshot.observations[0].time.precision, "month")
 
-    def test_graph_filters_release_and_rejects_foreign_spans(self):
-        captured = {}
-        class Session:
-            def __enter__(self): return self
-            def __exit__(self, *args): pass
-            def run(self, query, **params):
-                captured.update(params)
-                captured["query"] = str(query)
-                return [{"claim_id": "c1", "span_id": "s1"}, {"claim_id": "c1", "span_id": "other_release"}]
-        class Driver:
-            def __enter__(self): return self
-            def __exit__(self, *args): pass
-            def session(self, **kwargs):
-                captured["access"] = kwargs["default_access_mode"]
-                return Session()
-        repo = SimpleNamespace(
-            citations_for_chunk=lambda _: [SimpleNamespace(span_id="s1")],
-            get_span=lambda _: SimpleNamespace(span_id="s1", document_id="d1", original_text="原文"),
-            get_document=lambda _: SimpleNamespace(title="共识"),
-            span_source_contexts=lambda _: {"s1": {"page_no": 3}})
-        manifest = SimpleNamespace(chunk_ids=["chunk1"], clause_revision_ids=["c1"])
-        settings = SimpleNamespace(graph_store=SimpleNamespace(uri="bolt://fake", username="test", database="test",
-                                                               resolve_password=lambda: "test"))
-        with patch("neo4j.GraphDatabase.driver", return_value=Driver()), \
-             patch('neurogra.knowledge.retrieval.service._read_release_chunks', return_value=[SimpleNamespace(chunk_id='chunk1', span_ids=['s1'])]):
-            items = KnowledgeService(self.config, "release1", self.store, self.run)._graph(
-                RetrievalRequest(request_id="q", question="原文"), repo, manifest, settings, 5)
-        self.assertEqual(captured["claim_ids"], ["c1"])
-        self.assertEqual(captured["access"], "READ")
-        self.assertEqual(len(items), 1)
-        self.assertEqual(items[0].allowed_use, "background")
+    def test_graph_backend_passes_pinned_release_and_deadline(self):
+        with patch("neurogra.clinical.retrieval.retrieve_backend", return_value=("empty", [], {})) as retrieve:
+            service = KnowledgeService(self.config, "release1", self.store, self.run)
+            result = service.search_knowledge(RetrievalRequest(request_id="q", question="x", requested_backends=["graph"]))
+        self.assertEqual(result.backend_status, {"graph": "empty"})
+        args = retrieve.call_args.args
+        self.assertEqual(args[1], "release1")
+        self.assertEqual(args[3], "graph")
+        self.assertGreater(args[4], 0)
+        self.assertLessEqual(args[4], 30)
 
     def test_retrieval_degrades_and_deduplicates(self):
-        citation = SimpleNamespace(document_id="d1", span_id="s1", title="共识", quote="原文", page_no=1)
-        hit = SimpleNamespace(citations=[citation, citation], context_text=None, clause_ids=[])
-        repo = SimpleNamespace(connection=SimpleNamespace(set_progress_handler=lambda *args: None), get_release_manifest=lambda _: object(),
-            get_span=lambda _: SimpleNamespace(document_id='d1', original_text='原文'),
-            get_document=lambda _: SimpleNamespace(title='共识'), span_source_contexts=lambda _: {'s1': {'page_no': 1}})
-        @contextmanager
-        def repository(_):
-            yield repo
-        settings = SimpleNamespace(graph_store=SimpleNamespace(provider="jsonl"))
-        with patch("neurogra.clinical.retrieval.knowledge_settings", return_value=(settings, self.root / "db")), \
-             patch("neurogra.clinical.retrieval.readonly_repository", repository), \
-             patch("neurogra.clinical.retrieval.search", return_value=SimpleNamespace(hits=[hit])):
+        item = EvidenceItem(evidence_id="e", document_id="d", span_id="s", quote="source", version="r", matched_by=[])
+        def backend(config, release, request, name, remaining, snapshot):
+            return ("ok", [item, item], {}) if name == "bm25" else ("not_configured", [], {})
+        with patch("neurogra.clinical.retrieval.retrieve_backend", side_effect=backend):
             result = KnowledgeService(self.config, "r", self.store, self.run).search_knowledge(
-                RetrievalRequest(request_id="q", question="原文"))
+                RetrievalRequest(request_id="q", question="x", requested_backends=["bm25", "vector"]))
         self.assertEqual(result.status, "degraded")
-        self.assertEqual(result.backend_status["vector"], "not_configured")
         self.assertEqual(len(result.items), 1)
         self.assertEqual(result.items[0].matched_by, ["bm25"])
 
@@ -105,27 +75,17 @@ class BoundaryTests(unittest.TestCase):
         with self.assertRaises(ValueError):
             service.search_knowledge(RetrievalRequest(request_id="q", question="x", knowledge_release_id="r2"))
 
-    def test_vector_timeout_and_binding_change_do_not_block_bm25(self):
-        self.config.vector_enabled = True
-        self.config.vector.index_manifest = self.root / 'vector.json'
-        self.config.vector.index_manifest.write_text('{}', encoding='utf-8')
-        repo = SimpleNamespace(connection=SimpleNamespace(set_progress_handler=lambda *args: None), get_release_manifest=lambda _: object(),
-            get_span=lambda _: SimpleNamespace(document_id='d1', original_text='原文'),
-            get_document=lambda _: SimpleNamespace(title='共识'), span_source_contexts=lambda _: {})
-        @contextmanager
-        def repository(_): yield repo
-        hit = SimpleNamespace(citations=[SimpleNamespace(span_id='s1')], context_text=None, clause_ids=[])
-        service = KnowledgeService(self.config, 'r', self.store, self.run)
-        with patch('neurogra.clinical.retrieval.knowledge_settings', return_value=(object(), self.root / 'db')), \
-             patch('neurogra.clinical.retrieval.readonly_repository', repository), \
-             patch('neurogra.clinical.retrieval.search', return_value=SimpleNamespace(hits=[hit])), \
-             patch('neurogra.clinical.vector.search_vector', side_effect=TimeoutError('offline')):
-            for changed in (False, True):
-                if changed: self.config.vector.index_manifest.write_text('{"changed": true}', encoding='utf-8')
-                result = service.search_knowledge(RetrievalRequest(request_id=str(changed), question='x', requested_backends=['bm25','vector']))
-                self.assertEqual(result.backend_status, {'bm25':'ok','vector':'failed'})
-                self.assertEqual(result.status, 'degraded')
-                self.assertEqual(result.items[0].quote, '原文')
+    def test_vector_failure_does_not_block_bm25(self):
+        item = EvidenceItem(evidence_id="e", document_id="d", span_id="s", quote="source", version="r", matched_by=[])
+        for error in [TimeoutError("offline"), ValueError("embedding_model_binding_mismatch")]:
+            def backend(config, release, request, name, remaining, snapshot):
+                if name == "vector": raise error
+                return "ok", [item], {}
+            with patch("neurogra.clinical.retrieval.retrieve_backend", side_effect=backend):
+                result = KnowledgeService(self.config, "r", self.store, self.run).search_knowledge(
+                    RetrievalRequest(request_id=str(type(error)), question="x", requested_backends=["bm25", "vector"]))
+            self.assertEqual(result.backend_status, {"bm25": "ok", "vector": "failed"})
+            self.assertEqual(result.items[0].quote, "source")
 
     def test_unreadable_attachment_stays_in_inventory(self):
         intake = ingest_patient({"患者ID":"x","认知评估":{"路径":"missing.pdf"}}, self.config)

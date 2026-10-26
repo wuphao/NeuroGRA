@@ -1,0 +1,3 @@
+# Synthetic example only. Put real patient numbers in the ignored local file.
+SYNTHETIC-001
+SYNTHETIC-002

@@ -3,7 +3,8 @@ import hashlib
 import json
 from pathlib import Path
 from .config import ClinicalConfig
-from .schemas import Attachment, ImageAsset, IntakeResult, Issue, PatientInput, SourceRecord
+from .schemas import (Attachment, ImageAsset, IntakeResult, Issue, PatientInput, SourceRecord,
+                      is_rwe_patient_json)
 from .utils import dumps, fingerprint, identity, parse_time
 
 PATH_KEYS = {"路径", "报告路径", "文件路径", "附件路径"}
@@ -33,9 +34,14 @@ def file_hash(path: Path) -> str:
 
 def ingest_patient(raw: dict, config: ClinicalConfig) -> IntakeResult:
     # Validate arbitrary values as JSON as well as patient ID; reject NaN.
-    PatientInput.model_validate(raw)
+    patient = PatientInput.model_validate(raw)
     json.dumps(raw, allow_nan=False)
-    result = IntakeResult(patient_id=raw["患者ID"], raw_snapshot=raw, raw_input_hash=fingerprint(raw))
+    result = IntakeResult(patient_id=patient.patient_id, raw_snapshot=raw, raw_input_hash=fingerprint(raw))
+    rwe_export = is_rwe_patient_json(raw)
+    metadata_pointers = set()
+
+    def escape(key):
+        return key.replace('~', '~0').replace('/', '~1')
 
     def visit(value, pointer="", context=None, image_scope=False):
         context = dict(context or {})
@@ -69,26 +75,105 @@ def ingest_patient(raw: dict, config: ClinicalConfig) -> IntakeResult:
                 kind="field", locator={"json_pointer": pointer}, raw_value=value,
                 text=value if isinstance(value, str) else dumps(value), context=context,
                 content_hash=fingerprint(value))
-            source = context.get('来源')
+            source = context.get('rwe_source', context.get('来源'))
             if isinstance(source, dict) and source.get('type') == 'rwe' and '/原始记录/' in pointer:
                 suffix = pointer.split('/原始记录/', 1)[1]
                 record.locator['rwe'] = {**source, 'value_pointer': source['row_pointer'] + '/' + suffix}
-            if key in PATH_KEYS:
+            elif isinstance(source, dict) and source.get('type') == 'rwe_export':
+                record.locator['rwe'] = {**source, 'value_pointer': pointer}
+            if pointer in metadata_pointers:
+                record.parse_status = 'source_metadata'
+            image_path_field = rwe_export and image_scope and key == 'path'
+            if key in PATH_KEYS or image_path_field:
                 record.parse_status = "path_metadata"
                 if isinstance(value, str):
-                    resolved, status = resolve_asset(value, config)
-                    attachment = Attachment(attachment_id=identity("attachment", [result.raw_input_hash, pointer]),
-                                            record_id=record.record_id, original_path=value,
-                                            resolved_path=resolved, status=status, context=context)
+                    resolved, status = ((None, 'path_pending_manual_input') if image_path_field and not value.strip()
+                                        else resolve_asset(value, config))
                     # Raw images are inspected separately, not parsed as text.
-                    if not (image_scope and key == "路径"):
+                    if not (image_scope and key in {"路径", "path"}):
+                        attachment = Attachment(attachment_id=identity("attachment", [result.raw_input_hash, pointer]),
+                                                record_id=record.record_id, original_path=value,
+                                                resolved_path=resolved, status=status, context=context)
                         result.attachments.append(attachment)
                     record.path = resolved
                     if status != "available":
                         result.issues.append(Issue(code="path_" + status, stage="intake",
                                                    message="附件路径不可用", affected_refs=[record.record_id]))
             result.records.append(record)
-    visit(raw)
+    if rwe_export:
+        export_id = identity('json_export', result.raw_input_hash)
+        result.patient_metadata = {
+            'format': 'rwe_export', 'schema_version': raw.get('schema_version'),
+            'export_id': export_id,
+            'patient': raw['patient'], 'project': raw.get('project'),
+            'exported_at': raw.get('exported_at'), 'data_quality': raw.get('data_quality'),
+            'forms': {key: {name: value for name, value in form.items() if name != 'records'}
+                      for key, form in raw['forms'].items()},
+        }
+        for form_key, form in raw['forms'].items():
+            for index, row in enumerate(form['records']):
+                pointer = f'/forms/{escape(form_key)}/records/{index}'
+                metadata_pointers.update(pointer + '/' + key for key in
+                                         ('record_id', 'visit_date', 'patient_id', 'patientId'))
+                context = {'名称': form.get('form_name', form_key),
+                           '表格名称': form.get('form_name', form_key), '时间': row.get('visit_date'),
+                           '来源': {'type': 'rwe_export', 'project_id': (raw.get('project') or {}).get('id'),
+                                    'export_id': export_id,
+                                    'patient_number': patient.patient_id,
+                                    'form_key': form_key, 'form_id': form.get('form_id'),
+                                    'record_id': row.get('record_id'), 'row_pointer': pointer},
+                           'rwe_form': {key: value for key, value in form.items() if key != 'records'}}
+                # A clinical column named 来源 must not replace generated provenance.
+                context['rwe_source'] = dict(context['来源'])
+                visit(row, pointer, context)
+
+        # These fields are a view of the first DICOM row. Preserve novel fields,
+        # while the complete original document remains in raw_snapshot.
+        demographics = raw.get('demographics')
+        dicom_rows = raw['forms'].get('dicom_basic_info', {}).get('records', [])
+        aliases = {'年龄': '年龄', '身高_cm': '身高', '体重_kg': '体重',
+                   '出生日期': '出生日期', '性别': '性别', '患病情况': '患病情况'}
+        if isinstance(demographics, dict):
+            for key, value in demographics.items():
+                if dicom_rows and aliases.get(key, key) in dicom_rows[0]:
+                    continue
+                visit(value, '/demographics/' + escape(key))
+
+        for image_key, image in (raw.get('imaging') or {}).items():
+            if not isinstance(image, dict):
+                raise ValueError('RWE imaging entries must be objects')
+            pointer = '/imaging/' + escape(image_key)
+            modality = str(image.get('modality') or image_key).upper()
+            image_path = image.get('path')
+            if isinstance(image_path, str):
+                resolved, status = ((None, 'path_pending_manual_input') if not image_path.strip()
+                                    else resolve_asset(image_path, config))
+            else:
+                resolved, status = None, 'invalid'
+            image_time = image.get('visit_date', image.get('date', image.get('time')))
+            result.images.append(ImageAsset(
+                asset_id=identity('image', [result.raw_input_hash, pointer]), modality=modality,
+                path=resolved, status=status, time=parse_time(image_time),
+                sequence=image.get('sequence'), tracer=image.get('tracer'),
+                metadata={**image, 'original_path': image_path, 'input_pointer': pointer}))
+            metadata_pointers.update(pointer + '/' + key for key in
+                ('status', 'note', 'modality', 'visit_date', 'date', 'time', 'sequence', 'tracer'))
+            visit(image, pointer, {'模态': modality, '时间': image_time}, image_scope=True)
+
+        quality = raw.get('data_quality') or {}
+        for warning in quality.get('warnings', []):
+            result.issues.append(Issue(code='rwe_data_quality_warning', stage='intake',
+                message=warning.get('message', dumps(warning)) if isinstance(warning, dict) else str(warning)))
+        for name in quality.get('missing_forms', []):
+            result.issues.append(Issue(code='rwe_form_empty', stage='intake',
+                message=f'RWE 导出表单 {name} 没有记录，不能视为该患者未检查。'))
+        known_keys = {'schema_version', 'exported_at', 'project', 'patient', 'forms',
+                      'imaging', 'demographics', 'timeline', 'data_quality', '患者ID'}
+        for key, value in raw.items():
+            if key not in known_keys:
+                visit(value, '/' + escape(key))
+    else:
+        visit(raw)
     for image in result.images:
         prefix = str(image.metadata["input_pointer"]) + "/"
         image.source_refs = [r.record_id for r in result.records

@@ -15,7 +15,7 @@ TERMS = {
     "cognition": ("量表", "评估", "认知", "记忆", "moca", "mmse", "总分", "功能", "吃药", "服药", "财务"),
     "laboratory": ("检验", "化验", "标志物", "参考范围", "血液", "血清", "血浆", "维生素", "甲状腺", "脑脊液", "基因", "apoe"),
     "imaging": ("影像", "mri", "pet", "ct", "磁共振", "海马", "脑萎缩"),
-    "background": ("年龄", "性别", "教育", "语言", "身高", "体重", "出生"),
+    "background": ("年龄", "性别", "教育", "语言", "身高", "体重", "出生", "患病情况"),
 }
 META_KEYS = {"患者ID", "synthetic", "时间", "日期", "检查日期", "评估时间",
              "单位", "名称", "表格名称", "量表名称", "参考范围", "方法", "样本", "版本",
@@ -68,7 +68,8 @@ def status_rules(text, value):
 def profile_case(intake: IntakeResult, parsed: list[ParseResult], config: ClinicalConfig, gateway=None) -> CaseSnapshot:
     records = intake.records + [segment for result in parsed for segment in result.segments]
     snapshot = CaseSnapshot(case_id=identity("case", intake.raw_input_hash), patient_id=intake.patient_id,
-                            raw_input_hash=intake.raw_input_hash, records=records, images=intake.images,
+                            raw_input_hash=intake.raw_input_hash, patient_metadata=intake.patient_metadata,
+                            records=records, images=intake.images,
                             issues=intake.issues + [issue for p in parsed for issue in p.issues])
     candidates = []
     for record in records:

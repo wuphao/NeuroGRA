@@ -56,7 +56,7 @@ class RunStore:
         with self.connect() as db:
             db.execute("INSERT INTO runs VALUES(?,?,?,?,?)",
                        (run_id, dumps(config), time.time() + budget["seconds"],
-                        dumps({k: budget[k] for k in ("llm", "retrieval", "image")}), "received"))
+                        dumps({k: budget.get(k, 0) for k in ("llm", "retrieval", "image", "patient_data", "embedding")}), "received"))
         return run_id
 
     def run(self, run_id):
@@ -66,7 +66,11 @@ class RunStore:
             raise ValueError("unknown run")
         return dict(row)
 
-    def reserve(self, run_id: str, kind: str, scope=None, scope_limit=None) -> tuple[str, float]:
+    def reserve(self, run_id: str, kind: str, scope=None, scope_limit=None, reserved=0) -> tuple[str, float]:
+        from neurogra.platform.control import check_cancelled
+        check_cancelled()
+        if reserved < 0:
+            raise ValueError("negative_reserved_budget")
         with self.connect() as db:
             db.execute("BEGIN IMMEDIATE")
             try:
@@ -76,7 +80,7 @@ class RunStore:
                 remaining = run["deadline"] - time.time()
                 used = db.execute("SELECT count(*) FROM budget_ledger WHERE run_id=? AND kind=?",
                                   (run_id, kind)).fetchone()[0]
-                if remaining <= 0 or used >= json.loads(run["limits"]).get(kind, 0):
+                if remaining <= 0 or used >= max(0, json.loads(run["limits"]).get(kind, 0) - reserved):
                     raise BudgetExceeded(kind)
                 if scope is not None and scope_limit is not None:
                     scoped_used = db.execute(
@@ -107,6 +111,8 @@ class RunStore:
             db.execute("UPDATE runs SET status=? WHERE run_id=?", (status, run_id))
 
     def event(self, run_id, kind, payload):
+        from neurogra.platform.control import report_event
+        report_event(kind, payload)
         with self.connect() as db:
             db.execute("INSERT INTO events(run_id,type,payload,created) VALUES(?,?,?,?)",
                        (run_id, kind, dumps(payload), time.time()))

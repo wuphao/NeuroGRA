@@ -1,0 +1,12 @@
+{
+  "documents": [
+    {
+      "path": "docs/综述/神经退行性疾病诊断入门综述.docx",
+      "version": "1"
+    }
+  ],
+  "corpus_version": "review-neurodegenerative-docx-20261011",
+  "max_seconds": 14400,
+  "max_llm_calls": 2000,
+  "max_embedding_calls": 2000
+}

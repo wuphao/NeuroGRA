@@ -1,0 +1,19 @@
+# Actual build of docs/references/neurogra_kg_core. JSON only; no Neo4j writes.
+base_url: http://127.0.0.1:11434
+model: qwen3.8:27b
+embedding_model: qwen3-embedding:0.6b
+graph_backend: json
+timeout: 600
+max_calls: 2400
+max_embedding_calls: 20000
+max_seconds: 86400
+context_tokens: 32768
+max_input_chars: 24000
+output_tokens: 8192
+chunk_chars: 2400
+link_threshold: 0.6
+merge_threshold: 0.95
+selected_graphs: 3
+knowledge_cache: ../output/baselines/medgraphrag/neurogra_kg_core_cache/graphs
+model_cache: ../output/baselines/medgraphrag/neurogra_kg_core_cache/model_calls
+knowledge_manifest: ../output/baselines/medgraphrag/neurogra_kg_core_20261016/knowledge_manifest.json

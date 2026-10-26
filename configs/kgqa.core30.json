@@ -1,0 +1,23 @@
+{
+  "root": "..",
+  "questions": "docs/experiments/kgqa/core30_queries.jsonl",
+  "sources_manifest": "docs/references/neurogra_kg_core/sources.json",
+  "kb_config": "configs/kb.local.yaml",
+  "kb_release": "kb_release_04869ffec8f98e2ecbe7d06d",
+  "kg_config": "configs/kg.local.yaml",
+  "kg_release": "release_14e669acd8366c373835c0d0",
+  "med_config": "configs/medgraphrag.neurogra_kg_core.yaml",
+  "med_manifest": "output/baselines/medgraphrag/neurogra_kg_core_20261016/knowledge_manifest.json",
+  "model": "qwen3.8:27b",
+  "embedding_model": "qwen3-embedding:0.6b",
+  "base_url": "http://127.0.0.1:11434",
+  "reference_time": "2026-10-17T00:00:00+08:00",
+  "context_tokens": 32768,
+  "answer_tokens": 1000,
+  "evidence_token_bound": 4000,
+  "top_k": 10,
+  "timeout_seconds": 600,
+  "retrieval_seconds": 600,
+  "kg_max_llm_calls": 30,
+  "output": "output/benchmarks/kgqa/core30-v1"
+}

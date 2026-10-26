@@ -1,4 +1,7 @@
 import asyncio
+from neurogra.clinical.orchestration import TaskContext
+from neurogra.clinical.main_tools import MainToolExecutor
+from neurogra.clinical.schemas import RequestContent
 import csv
 import tempfile
 import unittest
@@ -151,26 +154,26 @@ class ThirdBatchTests(unittest.TestCase):
         snapshot.observations[0].quote = '报告记载脑萎缩。'
         snapshot.observations[0].name = '影像报告'
         task = AgentTask(task_id='t', agent_type='imaging', case_version=1, input_refs=['o'],
-            questions=['整理报告'], why='提供报告', permitted_tools=['read_case_record', 'search_knowledge'])
+            questions=['整理报告'], why='提供报告', permitted_tools=[])
         class Tools:
             async def search_knowledge(self, request):
                 return EvidenceBundle(bundle_id='b', request_id=request.request_id, status='empty', backend_status={'bm25': 'empty'})
             async def generate_structured(self, *args): return HistoryDraft()
             async def diamond_predict(self): raise AssertionError('no image supplied')
-        result = asyncio.run(ImagingAgent().analyze(task, SimpleNamespace(snapshot=snapshot, tools=Tools())))
+        result = asyncio.run(ImagingAgent().analyze(task, TaskContext(snapshot=snapshot, runtime=Tools())))
         self.assertEqual(result.model_results, [])
         self.assertEqual(result.report_findings[0].quote, '报告记载脑萎缩。')
 
     def test_image_only_ineligible_result_never_invents_classification(self):
         snapshot = self.snapshot('imaging'); snapshot.observations = []; snapshot.images = self.pair()[:1]
         task = AgentTask(task_id='t', agent_type='imaging', case_version=1, input_refs=['m'],
-            questions=['检查适用性'], why='仅MRI', permitted_tools=['search_knowledge', 'diamond_predict'])
+            questions=['检查适用性'], why='仅MRI', permitted_tools=[])
         class Tools:
             async def search_knowledge(self, request): raise ValueError('offline')
             async def diamond_predict(self):
                 return DiamondResult(result_id='d', patient_id='p', case_version=1, status='ineligible',
                     model_fingerprint='f', warnings=['缺少PET'])
-        result = asyncio.run(ImagingAgent().analyze(task, SimpleNamespace(snapshot=snapshot, tools=Tools())))
+        result = asyncio.run(ImagingAgent().analyze(task, TaskContext(snapshot=snapshot, runtime=Tools(), image_result=DiamondResult(result_id='d', patient_id='p', case_version=1, status='ineligible', model_fingerprint='f', warnings=['缺少PET']).model_dump(mode='json'))))
         self.assertEqual(result.status, 'partial')
         self.assertEqual(result.model_results, [])
         self.assertIn('缺少PET', result.uncertainties)
@@ -236,9 +239,12 @@ class ThirdBatchTests(unittest.TestCase):
                 return EvidenceBundle(bundle_id='b', request_id=request.request_id, status='empty', backend_status={'bm25': 'empty'})
         with patch('neurogra.clinical.diamond.model_profile', return_value=DiamondModelProfile(fingerprint='unverified', hashes={})):
             tool = DiamondTool(self.config, self.store, self.run)
-        executor = Executor(self.store, self.run, Knowledge(), diamond=tool)
+        executor = Executor(self.store, self.run)
         executor.register('imaging', ImagingAgent())
-        result = asyncio.run(executor.execute_tasks(fallback_plan(snapshot), snapshot))[0]
+        plan = fallback_plan(snapshot)
+        main_tools = MainToolExecutor(snapshot, self.config, self.store, self.run, diamond=tool)
+        action = main_tools.execute(RequestContent(type='imaging_tool', question='检查影像门控', reason='主Agent调度'), scope='main')
+        result = asyncio.run(executor.execute_tasks(plan, snapshot, {plan.tasks[0].task_id: {'image_result': action['data']}}))[0]
         self.assertEqual(result.status, 'partial')
         self.assertEqual(self.store.objects(self.run, 'diamond_result')[0]['payload']['status'], 'blocked_validation')
 

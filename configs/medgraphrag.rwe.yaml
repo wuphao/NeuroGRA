@@ -1,0 +1,24 @@
+# RWE clinical assessment using the already-built eight-PDF JSON corpus.
+base_url: http://127.0.0.1:11434
+model: qwen3.8:27b
+embedding_model: qwen3-embedding:0.6b
+graph_backend: json
+timeout: 600
+max_calls: 100
+max_embedding_calls: 1000
+max_seconds: 7200
+context_tokens: 32768
+max_input_chars: 24000
+output_tokens: 8192
+chunk_chars: 2400
+link_threshold: 0.6
+merge_threshold: 0.95
+selected_graphs: 3
+evidence_blocks: 6
+evidence_excerpt_chars: 900
+graph_entities: 12
+graph_relationships: 12
+document_summary_chars: 1800
+knowledge_cache: ../output/baselines/medgraphrag/neurogra_kg_core_cache/graphs
+model_cache: ../output/baselines/medgraphrag/neurogra_kg_core_cache/model_calls
+knowledge_manifest: ../output/baselines/medgraphrag/neurogra_kg_core_20261016/knowledge_manifest.json

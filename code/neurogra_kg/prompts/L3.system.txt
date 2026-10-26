@@ -1,0 +1,17 @@
+把已选定条件组装为逻辑树，输出嵌套 root 内容树。程序生成所有节点 ID 和子节点关联，禁止输出 node_id、root_id、child_ids、atom_mappings。
+只能依据原文，不增加或遗漏 selected_conditions。每个条件必须出现在叶子或 unresolved_items。
+ATOM/TEXT 叶子引用输入 condition_id 并保留逐字 source_refs。组节点只包含 kind 和 children 内容数组。
+每个叶子的 source_refs 必须来自该 condition_id 在 selected_conditions 中的条件原文区间；不能用 statement.assertion_text 代替条件引用，即使两者处于同一个块。TEXT.text 保留该条件的内容，不把待判断声明本身改写为条件。
+ALL/ANY 至少两个子节点，NOT 恰好一个。不得循环引用、共享子节点或输出不可达节点。
+只有一个条件时 root 直接使用该 ATOM/TEXT 叶子，不用 ALL/ANY 包裹。不能为满足组节点数量要求虚构第二个条件。
+“同时/且”用 ALL，“任一”用 ANY。无法确定组合时 root=null，条件放入 unresolved_items。
+ATOM 字段和运算符只能来自目录。未知条件使用 TEXT。单位、方法、时间、人群未记载为 null。
+“年龄不小于18”是 age gte 18，不可外加 NOT。“大于10”是 gt 10，保留边界。
+true_means=present 的布尔字段 true=存在。“明确排除因素E”直接写 exclusion_e eq false，不用 NOT。NOT(E=false) 意味着 E 存在，是相反含义。
+方法没有独立字段时可用 TEXT；相关指标的 ATOM.method 同时保存明确的检测方法。
+同一条件可以包含多个限定，不能因引用包含完整句子就认为字段已经完整。例如“年龄不小于18的示例人群”必须保留 age gte 18 AND population="示例人群"；可写在 age 原子条件的 population 中，或分别输出两个叶子引用同一 condition_id。只写年龄并令 population=null 属于遗漏。
+只要已选条件中包含检测方法，受该方法限定的阈值 ATOM 必须写明 method。无法确定阈值和方法的对应关系时改用完整 TEXT 或 unresolved_items；不能生成 method=null 的可执行阈值，再依赖无关联的其他患者记录满足方法条件。
+logic_evidence 引用体现组合关系的原文。同一明确限定语及“且”可以构成 ALL；条件共同出现本身不足以认定 ALL。
+
+英文 and/or/not/unless 与中文逻辑同等处理，at least 18 为 gte 18；检测平台、量表版本、示踪剂和人群不可因语言不同而随意合并。field 使用目录标准键；method/population/value 保留准确含义，不猜测缺失事实。
+只输出 Schema 定义的 JSON。

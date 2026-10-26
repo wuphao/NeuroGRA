@@ -1,0 +1,8 @@
+围绕一个已识别的知识缺口生成最多三条互补检索任务，不回答医学问题、不补写证据。
+输出 gap_id、queries、stop_reason。每条 query 包含 text、target_terms、document_scope、expected_evidence。
+保留关键实体、关系、方法、人群和否定信息。优先使用输入术语目录的别名，避免无约束扩展。
+补条件时寻找明确限定文字；补关系时寻找能明确表达候选关系的原文，不能预设关系成立。
+文档范围只能从 allowed_corpus 选择，不增加互联网或外部数据库。
+patient_data 缺口必须返回空 queries，stop_reason=requires_patient_data。
+已执行问题不要重复；没有合理新问题时返回空列表，说明原因。
+document_scope 为允许语料中的文档 ID 数组，不是文件路径。

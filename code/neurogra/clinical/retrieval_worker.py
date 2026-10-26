@@ -33,13 +33,13 @@ def run_json_process(command, payload, deadline):
 def main():
     from .config import ClinicalConfig
     from .retrieval import KnowledgeService
-    from .schemas import RetrievalRequest
+    from .schemas import RetrievalRequest, CaseSnapshot
     try:
         data = json.loads(sys.stdin.buffer.read())
         service = KnowledgeService.__new__(KnowledgeService)
         service.config = ClinicalConfig.model_validate(data['config'])
         service.release_id = data['release_id']
-        service.vector_binding = data['vector_binding']
+        service.snapshot = CaseSnapshot.model_validate(data['snapshot']) if data.get('snapshot') else None
         status, items, metadata = service._backend(RetrievalRequest.model_validate(data['request']),
                                                    data['backend'], data['deadline'])
         result = {'status': status, 'items': [i.model_dump(mode='json') for i in items], 'metadata': metadata}

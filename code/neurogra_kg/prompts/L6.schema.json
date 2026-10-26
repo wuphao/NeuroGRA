@@ -1,0 +1,72 @@
+{
+  "$defs": {
+    "SearchQuery": {
+      "additionalProperties": false,
+      "properties": {
+        "text": {
+          "title": "Text",
+          "type": "string"
+        },
+        "target_terms": {
+          "items": {
+            "type": "string"
+          },
+          "title": "Target Terms",
+          "type": "array"
+        },
+        "document_scope": {
+          "items": {
+            "type": "string"
+          },
+          "title": "Document Scope",
+          "type": "array"
+        },
+        "expected_evidence": {
+          "title": "Expected Evidence",
+          "type": "string"
+        }
+      },
+      "required": [
+        "text",
+        "target_terms",
+        "document_scope",
+        "expected_evidence"
+      ],
+      "title": "SearchQuery",
+      "type": "object"
+    }
+  },
+  "additionalProperties": false,
+  "properties": {
+    "gap_id": {
+      "title": "Gap Id",
+      "type": "string"
+    },
+    "queries": {
+      "items": {
+        "$ref": "#/$defs/SearchQuery"
+      },
+      "maxItems": 3,
+      "title": "Queries",
+      "type": "array"
+    },
+    "stop_reason": {
+      "anyOf": [
+        {
+          "type": "string"
+        },
+        {
+          "type": "null"
+        }
+      ],
+      "title": "Stop Reason"
+    }
+  },
+  "required": [
+    "gap_id",
+    "queries",
+    "stop_reason"
+  ],
+  "title": "PlanningOutput",
+  "type": "object"
+}

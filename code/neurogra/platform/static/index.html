@@ -1,0 +1,12 @@
+<!doctype html>
+<html lang="zh-CN">
+<head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1"><title>NeuroGRA 分析工作台</title><link rel="stylesheet" href="/app.css"></head>
+<body>
+<aside><a class="brand" href="/">NeuroGRA<span>病例分析工作台</span></a><nav aria-label="主导航"><button data-page="cases" class="selected">病例资料</button><button data-page="jobs">分析任务</button><button data-page="health">系统状态</button><button data-page="history">历史产物检查</button></nav><p class="aside-note">本机工作空间<br>输入、分析与依据可追溯</p></aside>
+<main><header><div><p class="eyebrow">LOCAL ANALYSIS WORKSPACE</p><h1 id="title">病例资料</h1></div><button id="refresh" class="secondary">刷新</button></header><div id="notice" role="status" aria-live="polite"></div>
+<section id="cases" class="page"><div class="card import"><div><h2>导入病例</h2><p>上传患者 JSON，预览资料后创建分析。相同内容自动复用输入版本。</p></div><label class="button">选择 JSON 文件<input type="file" id="patient-file" accept=".json,application/json"></label></div><details class="card"><summary>或粘贴患者 JSON</summary><label class="field"><span>患者 JSON</span><textarea id="patient-json" rows="7" placeholder="粘贴 JSON 对象"></textarea></label><button id="import-json">校验并导入</button></details><div class="columns"><div class="card"><h2>病例列表</h2><div id="case-list" class="list"></div></div><div id="case-detail" class="card"><div class="empty">选择病例，查看资料与输入版本。</div></div></div></section>
+<section id="jobs" class="page" hidden><div class="columns"><div class="card"><h2>任务列表</h2><div id="job-list" class="list"></div></div><div id="job-detail" class="card"><div class="empty">选择任务，查看进度、报告和执行记录。</div></div></div></section>
+<section id="health" class="page" hidden><div class="card"><h2>运行环境</h2><p>检查只探测服务与知识资源，不执行模型推理。</p><div id="health-list"></div></div></section>
+<section id="history" class="page" hidden><div class="card"><h2>历史产物完整性</h2><p>只读检查数据库引用的报告文件，保留原始运行结论。</p><div id="history-list"></div></div></section>
+<section id="report-view" class="card" hidden><div class="report-toolbar"><h2>报告与依据</h2><button id="close-report" class="secondary">关闭</button></div><div id="report-tabs"></div><div id="report-body" class="report"></div></section>
+<footer>分析结果应结合原始资料与专业复核使用。流程完成与诊断判断分别展示。</footer></main><script src="/app.js" defer></script></body></html>

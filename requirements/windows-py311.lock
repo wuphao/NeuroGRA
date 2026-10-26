@@ -1,0 +1,24 @@
+# Validated runtime baseline: Windows, CPython 3.11. Includes clinical/kb/kg/rwe.
+# Install: python -m pip install -r requirements/windows-py311.lock
+annotated-types==0.7.0
+certifi==2026.6.17
+charset-normalizer==3.4.7
+et-xmlfile==2.0.0
+idna==3.18
+lxml==6.1.1
+neo4j==5.28.6
+numpy==2.3.3
+openpyxl==3.1.5
+psycopg2-binary==2.9.10
+pydantic==2.11.9
+pydantic-core==2.33.2
+pydicom==3.0.2
+pymupdf==1.26.4
+pypdf==6.1.0
+python-docx==1.2.0
+pytz==2026.3.post1
+pyyaml==6.0.3
+requests==2.34.2
+typing-extensions==4.15.0
+typing-inspection==0.4.2
+urllib3==2.7.0

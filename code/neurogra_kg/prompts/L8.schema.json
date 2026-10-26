@@ -1,0 +1,78 @@
+{
+  "$defs": {
+    "LocalizationCheck": {
+      "additionalProperties": false,
+      "properties": {
+        "target": {
+          "title": "Target",
+          "type": "string"
+        },
+        "equivalent": {
+          "title": "Equivalent",
+          "type": "boolean"
+        },
+        "source_refs": {
+          "items": {
+            "$ref": "#/$defs/QuoteRef"
+          },
+          "minItems": 1,
+          "title": "Source Refs",
+          "type": "array"
+        },
+        "reason": {
+          "title": "Reason",
+          "type": "string"
+        }
+      },
+      "required": [
+        "target",
+        "equivalent",
+        "source_refs",
+        "reason"
+      ],
+      "title": "LocalizationCheck",
+      "type": "object"
+    },
+    "QuoteRef": {
+      "additionalProperties": false,
+      "properties": {
+        "block_id": {
+          "title": "Block Id",
+          "type": "string"
+        },
+        "quote": {
+          "minLength": 1,
+          "title": "Quote",
+          "type": "string"
+        },
+        "occurrence": {
+          "minimum": 0,
+          "title": "Occurrence",
+          "type": "integer"
+        }
+      },
+      "required": [
+        "block_id",
+        "quote",
+        "occurrence"
+      ],
+      "title": "QuoteRef",
+      "type": "object"
+    }
+  },
+  "additionalProperties": false,
+  "properties": {
+    "checks": {
+      "items": {
+        "$ref": "#/$defs/LocalizationCheck"
+      },
+      "title": "Checks",
+      "type": "array"
+    }
+  },
+  "required": [
+    "checks"
+  ],
+  "title": "LocalizationVerification",
+  "type": "object"
+}

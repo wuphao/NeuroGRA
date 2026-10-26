@@ -1,0 +1,5 @@
+任务输入 JSON：
+{{input_json}}
+
+输出 JSON Schema：
+{{output_schema}}

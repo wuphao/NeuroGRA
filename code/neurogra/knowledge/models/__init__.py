@@ -1,1 +1,0 @@
-"""Model client protocols."""
