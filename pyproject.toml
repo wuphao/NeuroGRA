@@ -34,7 +34,7 @@ where = ["code"]
 include = ["neurogra*"]
 
 [tool.setuptools.package-data]
-"neurogra.platform" = ["static/*.html", "static/*.js", "static/*.css"]
+"neurogra.platform" = ["static/*.html", "static/*.js", "static/*.css", "defaults/*.yaml"]
 "neurogra.clinical" = ["report_template.md"]
 neurogra_kg = ["prompts/*.txt", "prompts/*.json", "examples/*.json", "README.md"]
 neurogra_kb = ["README.md"]

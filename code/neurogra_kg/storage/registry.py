@@ -50,7 +50,9 @@ class Registry:
             raise KeyError(kind + ":" + id)
         return json.loads(row["payload"])
 
-    def publish(self, release_id, manifest):
+    def publish(self, release_id, manifest, *, activate=True):
+        if self.read_only:
+            raise ValueError('read_only_registry')
         value = canonical(manifest)
         with self.connection:
             if self.connection.execute("SELECT 1 FROM revoked_releases WHERE id=?", (release_id,)).fetchone():
@@ -60,14 +62,23 @@ class Registry:
                 raise ValueError("immutable_release_conflict")
             self.connection.execute("INSERT OR IGNORE INTO releases VALUES (?,?,?)",
                                     (release_id, value, datetime.now(timezone.utc).isoformat()))
-            self.connection.execute("INSERT INTO active_release VALUES (1,?) "
-                                    "ON CONFLICT(singleton) DO UPDATE SET id=excluded.id", (release_id,))
+            if activate:
+                self.connection.execute("INSERT INTO active_release VALUES (1,?) "
+                                        "ON CONFLICT(singleton) DO UPDATE SET id=excluded.id", (release_id,))
 
     def active_release_id(self):
         row = self.connection.execute("SELECT id FROM active_release WHERE singleton=1").fetchone()
         if row is None:
             raise ValueError("no_active_kg_release")
         return row[0]
+
+    def activate(self, release_id):
+        if self.read_only:
+            raise ValueError('read_only_registry')
+        self.release(release_id)  # Existence and revocation are checked first.
+        with self.connection:
+            self.connection.execute('INSERT INTO active_release VALUES (1,?) '
+                'ON CONFLICT(singleton) DO UPDATE SET id=excluded.id', (release_id,))
 
     def release(self, release_id=None):
         release_id = release_id or self.active_release_id()

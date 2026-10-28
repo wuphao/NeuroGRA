@@ -115,8 +115,17 @@ class TextKnowledgeService:
         if len(resources) != manifest["resource_count"] or len(docs) != manifest["document_count"]:
             raise ValueError("kb_resource_count_mismatch")
         for doc in docs:
-            snapshot = Path(doc.document.snapshot_path)
+            # Absolute provenance paths in immutable releases may refer to the
+            # machine that published them. Read the canonical local snapshot,
+            # still bound to document identity and the original checksum.
+            original = Path(doc.document.snapshot_path)
+            document_id = safe_identifier(doc.document.document_id)
+            if (document_id != stable_id('doc', [doc.document.checksum, doc.document.version])
+                    or original.parent.name != document_id
+                    or original.name not in {'source.pdf', 'source.docx', 'source.json'}):
+                raise ValueError('kb_source_snapshot_binding_mismatch')
             data_root = self.config.resolve(self.config.data_root)
+            snapshot = data_root / 'sources' / document_id / original.name
             if not snapshot.resolve().is_relative_to(data_root):
                 raise ValueError("kb_source_outside_data_root")
             if checksum(snapshot) != doc.document.checksum:

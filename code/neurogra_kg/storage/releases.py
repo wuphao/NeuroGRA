@@ -46,7 +46,7 @@ def statement_text(statement):
         "条件:" + condition_text(statement.condition), "条件状态:" + statement.condition_status]))
 
 
-def create_release(data_root, registry, build_id, statements, parsed_documents, embedding, graph, budget):
+def create_release(data_root, registry, build_id, statements, parsed_documents, embedding, graph, budget, *, activate=True):
     accepted = [statement for statement in statements if statement.status in {"approved", "source_checked"}]
     if not accepted:
         raise ValueError("no_source_checked_statements_to_publish")
@@ -63,9 +63,9 @@ def create_release(data_root, registry, build_id, statements, parsed_documents, 
     existing = directory / "manifest.json"
     if existing.is_file():
         manifest = json.loads(existing.read_text(encoding="utf-8"))
-        load_release(manifest)
+        load_release(manifest, directory=directory)
         graph.publish(release_id, accepted, blocks)
-        registry.publish(release_id, manifest)
+        registry.publish(release_id, manifest) if activate else registry.publish(release_id, manifest, activate=False)
         return manifest
     directory.mkdir(parents=True, exist_ok=True)
     resources = [{"id": "statement:" + statement.statement_id, "kind": "statement",
@@ -94,12 +94,12 @@ def create_release(data_root, registry, build_id, statements, parsed_documents, 
     graph.publish(release_id, accepted, blocks)
     # No active pointer until graph and every local artifact have succeeded.
     atomic_json(existing, manifest)
-    registry.publish(release_id, manifest)
+    registry.publish(release_id, manifest) if activate else registry.publish(release_id, manifest, activate=False)
     return manifest
 
 
-def load_release(manifest):
-    directory = Path(manifest["directory"])
+def load_release(manifest, *, directory=None):
+    directory = Path(directory if directory is not None else manifest["directory"])
     for name, expected in manifest["checksums"].items():
         if checksum(directory / name) != expected:
             raise ValueError("release_artifact_checksum_mismatch:" + name)

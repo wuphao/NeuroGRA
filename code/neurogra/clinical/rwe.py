@@ -54,6 +54,8 @@ class RweClient:
         self._token = None
 
     def resolve_patient(self, patient_number):
+        from neurogra.platform.control import check_cancelled
+        check_cancelled()
         if not isinstance(patient_number, str) or not patient_number.strip():
             raise RweFailure('invalid_patient_number')
         try:
@@ -85,6 +87,8 @@ class RweClient:
         return {'patient_id': int(rows[0][0]), 'patient_number': rows[0][1]}
 
     def fetch_form(self, form, patient_id):
+        from neurogra.platform.control import check_cancelled
+        check_cancelled()
         try:
             import requests
         except ImportError:

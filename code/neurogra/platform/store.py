@@ -7,7 +7,7 @@ from pathlib import Path
 
 from neurogra.clinical.utils import dumps
 
-SCHEMA_VERSION = 1
+SCHEMA_VERSION = 3
 TERMINAL = {'succeeded', 'failed', 'cancelled', 'interrupted'}
 
 
@@ -15,6 +15,8 @@ class PlatformStore:
     def __init__(self, root):
         self.root = Path(root).resolve()
         self.path = self.root / 'data/platform/platform.sqlite'
+        if not self.path.resolve().is_relative_to(self.root):
+            raise ValueError('platform_database_outside_workspace')
         self.path.parent.mkdir(parents=True, exist_ok=True)
         self.migrate()
 
@@ -26,6 +28,18 @@ class PlatformStore:
             yield db
 
     def migrate(self):
+        from .locking import ResourceBusy, exclusive
+        deadline = time.monotonic() + 15
+        while True:
+            try:
+                with exclusive(self.root, 'database-migration'):
+                    return self._migrate()
+            except ResourceBusy:
+                if time.monotonic() >= deadline:
+                    raise
+                time.sleep(.05)
+
+    def _migrate(self):
         with self.connect() as db:
             version = db.execute('PRAGMA user_version').fetchone()[0]
             if version > SCHEMA_VERSION:
@@ -65,8 +79,22 @@ class PlatformStore:
                         payload TEXT NOT NULL, created REAL NOT NULL)''',
                     '''CREATE TABLE IF NOT EXISTS resource_leases(name TEXT PRIMARY KEY,
                         owner TEXT NOT NULL, lease_until REAL NOT NULL)''',
+                    '''CREATE TABLE IF NOT EXISTS workers(worker_id TEXT PRIMARY KEY,
+                        pid INTEGER NOT NULL, last_seen REAL NOT NULL, status TEXT NOT NULL,
+                        stop_requested INTEGER NOT NULL DEFAULT 0)''',
+                    '''CREATE TABLE IF NOT EXISTS documents(document_id TEXT PRIMARY KEY,
+                        name TEXT NOT NULL, path TEXT NOT NULL, checksum TEXT NOT NULL UNIQUE,
+                        bytes INTEGER NOT NULL, created REAL NOT NULL)''',
+                    '''CREATE TABLE IF NOT EXISTS batches(batch_id TEXT PRIMARY KEY,
+                        name TEXT NOT NULL, created REAL NOT NULL, plan TEXT NOT NULL DEFAULT '[]')''',
+                    '''CREATE TABLE IF NOT EXISTS batch_jobs(batch_id TEXT NOT NULL REFERENCES batches(batch_id),
+                        job_id TEXT NOT NULL REFERENCES jobs(job_id), PRIMARY KEY(batch_id,job_id))''',
                 ]:
                     db.execute(statement)
+                # Early management builds had batches without a persisted plan.
+                columns = {row[1] for row in db.execute('PRAGMA table_info(batches)')}
+                if 'plan' not in columns:
+                    db.execute("ALTER TABLE batches ADD COLUMN plan TEXT NOT NULL DEFAULT '[]'")
                 db.execute(f'PRAGMA user_version={SCHEMA_VERSION}')
                 db.execute('COMMIT')
             except BaseException:
@@ -90,12 +118,14 @@ class PlatformStore:
             raise KeyError('case_version_not_found')
         return dict(row)
 
-    def create_job(self, kind, version_id, config, payload, fingerprint):
+    def create_job(self, kind, version_id, config, payload, fingerprint, *, batch_id=None):
         now = time.time()
         with self.connect() as db:
             db.execute('BEGIN IMMEDIATE')
             existing = db.execute("SELECT job_id FROM jobs WHERE fingerprint=? AND status IN ('queued','running')", (fingerprint,)).fetchone()
             if existing:
+                if batch_id:
+                    db.execute('INSERT OR IGNORE INTO batch_jobs VALUES(?,?)', (batch_id, existing[0]))
                 db.execute('COMMIT')
                 return self.job(existing[0])
             job_id, attempt_id = uuid.uuid4().hex, uuid.uuid4().hex
@@ -103,6 +133,8 @@ class PlatformStore:
                 (job_id, kind, version_id, dumps(config), dumps(payload), fingerprint, 'queued', now, now))
             db.execute('INSERT INTO attempts(attempt_id,job_id,ordinal,mode,status) VALUES(?,?,1,?,?)',
                        (attempt_id, job_id, 'new', 'queued'))
+            if batch_id:
+                db.execute('INSERT INTO batch_jobs VALUES(?,?)', (batch_id, job_id))
             db.execute('COMMIT')
         return self.job(job_id)
 
@@ -218,3 +250,25 @@ class PlatformStore:
                 db.execute("UPDATE jobs SET status='interrupted',updated=? WHERE job_id=?", (time.time(), row['job_id']))
             db.execute('COMMIT')
         return len(rows)
+
+    def worker_seen(self, worker_id, pid, status):
+        with self.connect() as db:
+            db.execute('''INSERT INTO workers(worker_id,pid,last_seen,status) VALUES(?,?,?,?)
+                ON CONFLICT(worker_id) DO UPDATE SET pid=excluded.pid,last_seen=excluded.last_seen,status=excluded.status''',
+                (worker_id, pid, time.time(), status))
+
+    def workers(self):
+        with self.connect() as db:
+            rows = [dict(r) for r in db.execute('SELECT * FROM workers ORDER BY last_seen DESC LIMIT 30')]
+        for row in rows:
+            row['online'] = row['status'] != 'stopped' and row['last_seen'] > time.time() - 20
+        return rows
+
+    def worker_should_stop(self, worker_id):
+        with self.connect() as db:
+            row = db.execute('SELECT stop_requested FROM workers WHERE worker_id=?', (worker_id,)).fetchone()
+        return bool(row and row[0])
+
+    def stop_workers(self):
+        with self.connect() as db:
+            db.execute('UPDATE workers SET stop_requested=1 WHERE last_seen>?', (time.time() - 20,))

@@ -11,7 +11,7 @@ from .runtime import Budget
 from .utils import atomic_json
 
 
-def probe(config, execute=True):
+def probe(config, execute=True, *, budget=None):
     root = config.resolve(config.paths.output_root)
     report = {"timestamp": datetime.now(timezone.utc).isoformat(), "checks": {},
               "prompt_schemas": {task: bool(schema.model_json_schema()) for task, schema in TASK_SCHEMAS.items()}}
@@ -29,11 +29,11 @@ def probe(config, execute=True):
             check["model_info"] = {key: value for key, value in show.get("model_info", {}).items()
                                    if key.endswith("context_length") or key.endswith("embedding_length")}
             if execute:
-                budget = Budget(max_seconds=settings.timeout_seconds + 30)
+                call_budget = budget if budget is not None else Budget(max_seconds=settings.timeout_seconds + 30)
                 if label == "llm":
                     adapter = OllamaLLMAdapter(settings, root)
                     output = adapter.execute("probe", {"blocks": [{"block_id": "probe-block",
-                        "text": "这是一段非患者连通性检查文本。"}]}, ProbeOutput, budget)
+                        "text": "这是一段非患者连通性检查文本。"}]}, ProbeOutput, call_budget)
                     quote_valid = any(ref.block_id == "probe-block" and ref.quote in
                         "这是一段非患者连通性检查文本。" and ref.occurrence == 0 for ref in output.source_refs)
                     if not output.ok or not quote_valid:
@@ -43,7 +43,7 @@ def probe(config, execute=True):
                                  ok=output.ok, thinking=settings.thinking)
                 else:
                     adapter = OllamaEmbeddingAdapter(settings, root)
-                    vectors = adapter.embed(["医学知识检索连通性检查。", "原文来源定位。"], budget)
+                    vectors = adapter.embed(["医学知识检索连通性检查。", "原文来源定位。"], call_budget)
                     check.update(executed=True, dimension=adapter.dimension,
                                  rows=len(vectors), normalization="l2")
         except Exception as exc:

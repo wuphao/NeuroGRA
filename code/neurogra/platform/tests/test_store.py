@@ -1,6 +1,8 @@
+import sqlite3
 import tempfile
 import unittest
 from concurrent.futures import ThreadPoolExecutor
+from contextlib import closing
 from pathlib import Path
 from unittest.mock import patch
 
@@ -80,3 +82,23 @@ class StoreTests(unittest.TestCase):
         self.submit()
         reopened = PlatformStore(self.root)
         self.assertEqual(len(reopened.jobs()), 1)
+
+    def test_old_management_schema_upgrades_with_recoverable_backup(self):
+        job = self.submit()
+        with self.app.store.connect() as db:
+            db.execute('DROP TABLE batches')
+            db.execute('CREATE TABLE batches(batch_id TEXT PRIMARY KEY,name TEXT NOT NULL,created REAL NOT NULL)')
+            db.execute("INSERT INTO batches VALUES('old_batch','old',0)")
+            db.execute('PRAGMA user_version=2')
+        upgraded = PlatformStore(self.root)
+        with upgraded.connect() as db:
+            self.assertEqual(db.execute('SELECT plan FROM batches').fetchone()[0], '[]')
+            self.assertEqual(db.execute('PRAGMA user_version').fetchone()[0], 3)
+        backups = list(upgraded.path.parent.glob('pre-migration-v2-*.sqlite'))
+        self.assertEqual(len(backups), 1)
+        with closing(sqlite3.connect(backups[0])) as old:
+            self.assertEqual(old.execute('PRAGMA user_version').fetchone()[0], 2)
+            self.assertNotIn('plan', {r[1] for r in old.execute('PRAGMA table_info(batches)')})
+            self.assertEqual(old.execute('SELECT job_id FROM jobs').fetchone()[0], job['job_id'])
+        PlatformStore(self.root)
+        self.assertEqual(len(list(upgraded.path.parent.glob('pre-migration-v2-*.sqlite'))), 1)

@@ -46,6 +46,32 @@ temp/
 *.sqlite
 *.sqlite3
 *.db
+*.sqlite-wal
+*.sqlite-shm
+*.sqlite-journal
+*.sqlite3-wal
+*.sqlite3-shm
+*.sqlite3-journal
+*.db-wal
+*.db-shm
+*.db-journal
+*.npy
+*.npz
+*.pt
+*.pth
+*.ckpt
+*.safetensors
+*.onnx
+*.gguf
+
+# Downloaded reference PDFs (retain source lists and download links)
+/docs/references/**/*.pdf
+
+# Local credentials and private keys
+*.pem
+*.key
+credentials.json
+local_credentials.json
 
 # Document render/QA artifacts
 .codex_docx_ref_render/
@@ -69,6 +95,7 @@ docs/病例报告/
 # Rebuildable Python distribution artifacts
 /build/
 /dist/
+/backups/
 
 # Browser acceptance artifacts and local test data
 /testing/runs/

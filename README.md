@@ -17,14 +17,13 @@ python -m pip install -e ".[clinical,kb,kg,rwe,dev]"
 
 ## 启动与分析
 
-下面的工作台与后台进程应在同一个项目目录启动。当前开发版本使用两个终端：
+在项目目录启动本机工作台及独立后台执行进程：
 
 ```powershell
-# 终端一：本机工作台
-neurogra --profile kb-only serve --port 8767
-# 终端二：独立后台任务执行进程
-neurogra worker
+neurogra --profile kb-only start --port 8767
 ```
+
+关闭页面服务后，后台任务继续执行。`neurogra stop-worker` 请求后台进程完成当前任务后退出。调试时仍可分别使用 `serve` 和 `worker`。
 
 浏览器打开 http://127.0.0.1:8767，上传或粘贴患者 JSON，预览后提交分析。`kb-only` 使用原文 KB；需要完整图谱时显式选择 `standard`。关闭知识来源不会初始化该来源，也不会将未验证条件当作已满足。
 
@@ -54,6 +53,27 @@ python code/build_knowledge.py --pdf-folder path/to/pdfs --kb-only
 原文与知识发布保持现有位置。平台输入版本、队列及新报告保存在 `data/platform/`；SDK 独立运行报告在 `data/clinical/reports/`，不再写入文档目录。任务排队和医学判断分别显示，部分完成不等同于确诊。
 
 凭据使用环境变量或被忽略的本地 `.env.rwe.local`，参考 `.env.example`。不要提交真实患者、真实编号清单、Token、密码或运行日志。已完成的清理不会自动恢复旧病例和报告，历史缺失产物会明确显示不可用。
+
+## 空间与备份
+
+```powershell
+# 统计受管理目录，不扫描 study 等个人文件
+neurogra storage
+# 先生成清理预览，仅涉及超过保留期的已结束任务轮转日志
+neurogra cleanup --retention-days 30 --save-plan tmp/cleanup-plan.json
+# 审阅预览后显式执行；文件发生变化时必须重新生成预览
+neurogra cleanup --apply-plan tmp/cleanup-plan.json
+# 在队列为空、任务结束后创建私有备份，目标目录必须尚不存在
+neurogra backup --destination backups/local-20261027
+neurogra verify-backup --source backups/local-20261027
+# 恢复到全新的目录，不覆盖当前工作空间
+neurogra restore --source backups/local-20261027 --destination tmp/restored-workspace
+neurogra --root tmp/restored-workspace doctor --offline
+```
+
+备份包含患者资料，应按本地私有数据保管。备份会校验输入、SQLite、文件哈希及 KB/KG 发布；凭据与外部模型、Neo4j 服务不打包，恢复后需重新配置和检查。原先缺失的报告仍显示不可用。失败操作可能保留带 `.partial-` 的目录用于排查，这些目录不算有效备份或已恢复工作空间。
+
+平台模型日志默认仅记录调用关联和内容摘要，每份日志 2 MiB，最多保留三份轮转副本。需要完整调试内容时，在配置中显式设置 `llm_debug_logging: true`；正式报告、来源和任务记录独立保存，不随日志轮转删除。
 
 ## 开发验证
 

@@ -56,7 +56,7 @@ class KnowledgeGraphService:
             if profile["checks"][key]["model"] != adapter.config.model or profile["checks"][key]["digest"] != adapter.model_digest():
                 raise ValueError("kg_runtime_profile_model_changed:" + key)
 
-    def build(self, request: BuildRequest):
+    def build(self, request: BuildRequest, *, budget=None):
         if self.read_only:
             raise ValueError("read_only_service")
         self._check_runtime()
@@ -85,7 +85,7 @@ class KnowledgeGraphService:
                                 "request": request.model_dump(mode="json")})
         result = BuildResult(build_id=build_id, status="running")
         self.registry.save("build", build_id, result)
-        budget = Budget(request.max_seconds, max_llm_calls=request.max_llm_calls,
+        budget = budget or Budget(request.max_seconds, max_llm_calls=request.max_llm_calls,
                         max_embedding_calls=request.max_embedding_calls)
         statements, parsed_documents = [], []
         try:
@@ -149,7 +149,7 @@ class KnowledgeGraphService:
     def inspect_build(self, build_id):
         return BuildResult.model_validate(self.registry.get("build", build_id))
 
-    def publish(self, build_id):
+    def publish(self, build_id, *, activate=True):
         if self.read_only:
             raise ValueError("read_only_service")
         result = self.inspect_build(build_id)
@@ -160,9 +160,9 @@ class KnowledgeGraphService:
         statements = [KnowledgeStatement.model_validate(row) for row in json.loads((directory / "statements.json").read_text(encoding="utf-8"))]
         parsed = [ParsedDocument.model_validate(row) for row in json.loads((directory / "documents.json").read_text(encoding="utf-8"))]
         return create_release(self.data_root, self.registry, build_id, statements, parsed,
-                              self.embedding, self.graph, Budget(3600, max_embedding_calls=1000))
+                              self.embedding, self.graph, Budget(3600, max_embedding_calls=1000), activate=activate)
 
-    def publish_builds(self, build_ids, *, max_seconds=3600, max_embedding_calls=10000):
+    def publish_builds(self, build_ids, *, max_seconds=3600, max_embedding_calls=10000, activate=True, budget=None):
         """Publish a single corpus from completed per-document builds, without regenerating statements."""
         if self.read_only:
             raise ValueError('read_only_service')
@@ -196,7 +196,7 @@ class KnowledgeGraphService:
         atomic_json(directory / 'result.json', result.model_dump(mode='json'))
         return create_release(self.data_root, self.registry, build_id, list(statements.values()),
             list(documents.values()), self.embedding, self.graph,
-            Budget(max_seconds, max_embedding_calls=max_embedding_calls))
+            budget or Budget(max_seconds, max_embedding_calls=max_embedding_calls), activate=activate)
 
     def retrieve(self, request: RetrievalRequest):
         deadline = time.time() + request.max_seconds
@@ -333,20 +333,27 @@ class KnowledgeGraphService:
             raise ValueError("read_only_service")
         from .storage.releases import load_release
         from .completion.complex import ComplExModel
-        manifest = self.registry.release(release_id)
+        manifest = self._release(release_id)
         statements, _, _, _ = load_release(manifest)
         model = ComplExModel.train(statements, manifest["release_id"], self.config.completion)
         return model.save(self.data_root / "complex" / manifest["release_id"])
 
+    def _release(self, release_id=None):
+        manifest = self.registry.release(release_id)
+        identifier = safe_identifier(manifest['release_id'])
+        if release_id is not None and identifier != release_id:
+            raise ValueError('release_registry_binding_mismatch')
+        return {**manifest, 'directory': str(self.data_root / 'releases' / identifier)}
+
     def get_release(self, release_id=None):
         from .storage.releases import load_release
-        manifest = self.registry.release(release_id)
+        manifest = self._release(release_id)
         load_release(manifest)
         return manifest
 
     def get_source(self, block_id, release_id=None):
         from .storage.releases import load_release
-        manifest = self.registry.release(release_id)
+        manifest = self._release(release_id)
         _, blocks, _, data = load_release(manifest)
         if block_id not in blocks:
             raise KeyError("source:" + block_id)
@@ -356,7 +363,7 @@ class KnowledgeGraphService:
 
     def list_source_ids(self, release_id=None):
         from .storage.releases import load_release
-        return sorted(load_release(self.registry.release(release_id))[1])
+        return sorted(load_release(self._release(release_id))[1])
 
     def inspect_vector_index(self, release_id=None):
         """Validate the published vectors and their current model/template binding."""

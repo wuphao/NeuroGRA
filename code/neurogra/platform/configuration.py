@@ -64,3 +64,14 @@ def public_config(config):
             return [redact(v) for v in value]
         return value
     return redact(config.model_dump(mode='json'))
+
+
+def configuration_for_profile(config, profile, overrides=None):
+    if profile not in PROFILES:
+        raise ValueError('unknown_configuration_profile')
+    access = {'use_kb': profile != 'patient-only', 'use_kg': profile in {'standard', 'quick'}}
+    patch = {'main_agent': access, 'agents': {r: access for r in config.agents}}
+    if profile == 'quick':
+        patch = merge(patch, {'max_rounds': 1, 'budget': {'llm': 32, 'seconds': 600}})
+    values = merge(config.model_dump(mode='json'), merge(patch, overrides or {}))
+    return resolve_config(root=config.project_root, overrides=values)

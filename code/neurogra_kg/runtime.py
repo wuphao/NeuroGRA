@@ -39,6 +39,8 @@ class Budget:
         return value
 
     def reserve(self, kind):
+        from neurogra.platform.control import check_cancelled
+        check_cancelled()
         self.remaining()
         attr = kind + "_calls"
         if getattr(self, attr) >= getattr(self, "max_" + attr):

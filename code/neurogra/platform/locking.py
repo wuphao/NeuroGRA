@@ -13,7 +13,10 @@ class ResourceBusy(RuntimeError):
 def exclusive(root, name):
     if not re.fullmatch(r'[A-Za-z0-9_-]+', name):
         raise ValueError('invalid_lock_name')
-    directory = Path(root) / 'data/platform/locks'
+    root = Path(root).resolve()
+    directory = (root / 'data/platform/locks').resolve()
+    if not directory.is_relative_to(root):
+        raise ValueError('lock_directory_outside_workspace')
     directory.mkdir(parents=True, exist_ok=True)
     with (directory / (name + '.lock')).open('a+b') as handle:
         if handle.seek(0, 2) == 0:

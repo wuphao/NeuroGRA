@@ -2,6 +2,8 @@
 import hashlib
 import json
 import time
+import uuid
+from collections import Counter
 from pathlib import Path
 
 from neurogra_common.identity import stable_id
@@ -11,7 +13,7 @@ from neurogra.clinical.intake import ingest_patient
 from neurogra.clinical.schemas import PatientInput
 from neurogra.clinical.utils import dumps, fingerprint, sha256_file, write_json
 
-from .configuration import PROFILES, merge, public_config, resolve_config
+from .configuration import configuration_for_profile, public_config
 from .preflight import inspect_environment
 from .store import PlatformStore
 
@@ -19,7 +21,8 @@ from .store import PlatformStore
 class Application:
     def __init__(self, root, config=None):
         self.root = Path(root).resolve()
-        self.config = config or resolve_config(root=self.root)
+        from .settings import load_settings
+        self.config = config or load_settings(self.root)
         self.store = PlatformStore(self.root)
 
     def import_case(self, raw, *, source='json'):
@@ -75,7 +78,7 @@ class Application:
             'record_count': len(intake.records),
             'preview': [r.model_dump(mode='json') for r in intake.records[:80]]}
 
-    def submit(self, version_id, config=None):
+    def submit(self, version_id, config=None, *, batch_id=None):
         config = config or self.config
         if config.project_root.resolve() != self.root:
             raise ValueError('job_root_mismatch')
@@ -93,18 +96,75 @@ class Application:
         config = config.model_copy(update=updates)
         effective = config.model_dump(mode='json')
         job = self.store.create_job('analysis', version_id, effective, {},
-                                    fingerprint(['analysis', version_id, effective]))
+                                    fingerprint(['analysis', version_id, effective]), batch_id=batch_id)
         return self.job(job['job_id'])
 
+    def submit_batch(self, version_ids, config=None, name='病例批量分析'):
+        if not isinstance(version_ids, list) or not 1 <= len(version_ids) <= 200 or len(set(version_ids)) != len(version_ids):
+            raise ValueError('请选择 1 至 200 个不重复的病例版本。')
+        if not isinstance(name, str) or not name.strip() or len(name) > 120:
+            raise ValueError('批次名称不能为空且最长 120 字符。')
+        for version_id in version_ids:
+            self.patient(version_id)
+        config = config or self.config
+        ready = inspect_environment(config)
+        if not ready['ready']:
+            raise ValueError('environment_not_ready')
+        updates = {}
+        for source, field in [('kb', 'text_knowledge_release_id'), ('kg_release', 'knowledge_release_id')]:
+            for check in ready.get('checks', []):
+                if check['name'] == source and check.get('details', {}).get('release_id'):
+                    updates[field] = check['details']['release_id']
+        config = config.model_copy(update=updates)
+        batch_id = uuid.uuid4().hex
+        plan = {'versions': version_ids, 'config': config.model_dump(mode='json'), 'submission_errors': {}}
+        with self.store.connect() as db:
+            db.execute('INSERT INTO batches VALUES(?,?,?,?)', (batch_id, name.strip(), time.time(), dumps(plan)))
+        for version_id in version_ids:
+            try:
+                self.submit(version_id, config, batch_id=batch_id)
+            except (ValueError, KeyError) as exc:
+                # The plan remains persisted; failures are visible, never an apparently complete batch.
+                plan['submission_errors'][version_id] = type(exc).__name__
+        with self.store.connect() as db:
+            db.execute('UPDATE batches SET plan=? WHERE batch_id=?', (dumps(plan), batch_id))
+        return self.batch(batch_id)
+
+    def batch(self, batch_id):
+        with self.store.connect() as db:
+            row = db.execute('SELECT * FROM batches WHERE batch_id=?', (batch_id,)).fetchone()
+            if row is None:
+                raise KeyError('batch_not_found')
+            ids = [r[0] for r in db.execute('SELECT job_id FROM batch_jobs WHERE batch_id=?', (batch_id,))]
+        jobs = [self.job(i) for i in ids]
+        plan = json.loads(row['plan'])
+        if isinstance(plan, list):
+            plan = {'versions': plan, 'submission_errors': {}}
+        submitted = {j['version_id'] for j in jobs}
+        return {'batch_id': batch_id, 'name': row['name'], 'created': row['created'], 'planned': len(plan['versions']),
+                'jobs': jobs, 'not_submitted': [v for v in plan['versions'] if v not in submitted],
+                'submission_errors': plan.get('submission_errors', {}),
+                'counts': dict(Counter(j['status'] for j in jobs))}
+
+    def batches(self):
+        with self.store.connect() as db:
+            ids = [r[0] for r in db.execute('SELECT batch_id FROM batches ORDER BY created DESC LIMIT 100')]
+        return [self.batch(i) for i in ids]
+
     def configuration(self, profile, overrides=None):
-        if profile not in PROFILES:
-            raise ValueError('unknown_configuration_profile')
-        access = {'use_kb': profile != 'patient-only', 'use_kg': profile in {'standard', 'quick'}}
-        patch = {'main_agent': access, 'agents': {r: access for r in self.config.agents}}
-        if profile == 'quick':
-            patch = merge(patch, {'max_rounds': 1, 'budget': {'llm': 32, 'seconds': 600}})
-        values = merge(self.config.model_dump(mode='json'), merge(patch, overrides or {}))
-        return resolve_config(root=self.root, overrides=values)
+        return configuration_for_profile(self.config, profile, overrides)
+
+    def submit_rwe(self, patient_number):
+        from .knowledge import rwe_readiness
+        if not isinstance(patient_number, str) or not patient_number.strip() or len(patient_number) > 128 or any(ord(c) < 32 for c in patient_number):
+            raise ValueError('请输入有效的 RWE 患者编号。')
+        if not rwe_readiness(self.config)['ready']:
+            raise ValueError('RWE 凭据或依赖未配置，请检查本地设置。')
+        payload = {'patient_number': patient_number.strip()}
+        config = self.config.model_dump(mode='json')
+        job = self.store.create_job('rwe_import', None, config, payload,
+                                    fingerprint(['rwe_import', payload, config]))
+        return self.job(job['job_id'])
 
     def retry_job(self, job_id, *, resume=False):
         from .locking import exclusive
@@ -112,11 +172,23 @@ class Application:
             job = self.store.job(job_id)
             previous = job['attempts'][-1]
             config = ClinicalConfig.model_validate_json(job['config'])
-            readiness = inspect_environment(config)
+            if job['kind'] == 'analysis':
+                readiness = inspect_environment(config)
+            elif job['kind'] == 'rwe_import':
+                from .knowledge import rwe_readiness
+                readiness = rwe_readiness(config)
+            elif job['kind'] == 'knowledge_build':
+                from .knowledge import build_readiness
+                payload = json.loads(job['payload'])
+                readiness = build_readiness(config, kb=payload['kb'], kg=payload['kg'], vector=payload['vector'])
+            else:
+                readiness = {'ready': True}
             if not readiness['ready']:
                 raise ValueError('environment_not_ready')
             run_id = None
             if resume:
+                if job['kind'] != 'analysis':
+                    raise ValueError('此任务请使用重新执行，不支持临床检查点恢复。')
                 from neurogra.clinical.execution import verify_execution_binding
                 from neurogra.clinical.storage import RunStore
                 run_id = previous['run_id']

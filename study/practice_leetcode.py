@@ -9,426 +9,145 @@ class Node:
         self.next = next
         self.random = random
 class Solution:
-
-    def partition(self, s):
-        """
-        :type s: str
-        :rtype: List[List[str]]
-        """
+    def findAnagrams(self, s, p):
+        if len(p)>len(s):
+            return []
+        occp = {}
+        occs = {}
+        for c in p:
+            occp[c] =occp.get(c,0)+1
         n = len(s)
-        ans = []
-        
-        f = [[True] * n for _ in range(n)]
-        for i in range(n - 1, -1, -1):
-            for j in range(i + 1, n):
-                f[i][j] = (s[i] == s[j]) and f[i + 1][j - 1]
-        
-        splits = []  #存多个字串的列表
-        
-        def dfs(i):
-            if i == n:
-                ans.append(splits[:])   
-                return
-            for j in range(i, n):
-                if f[i][j]:
-                    splits.append(s[i:j + 1])
-                    dfs(j + 1)  #找下一个回文串了（分割）
-                    splits.pop()      
-        
-        dfs(0)
-        return ans
-    
-    def kthSmallest(self, root, k):
-        """
-        :type root: Optional[TreeNode]
-        :type k: int
-        :rtype: int
-        """
-    
-
-        def findk(root,k):
-            if not root:
-                return 
-            findk(root.left,k)
-            self.i+=1
-            if self.i==k:
-              self.res = root.val
-            findk(root.right,k)
-
-        findk(root,k)
-        return self.res
-    
-    def bfs(self, root, depth, res):
-        if not root:
-            return
-        if len(res) == depth:
-            res.append([])
-        self.bfs(root.left, depth + 1, res)
-        res[depth].append(root.val)
-        self.bfs(root.right, depth + 1, res)
-
-    def levelOrder(self, root):
+        m = len(p)
+        for i in range(0,m):
+            occs[s[i]] = occs.get(s[i],0)+1
+        if occp == occs:
+            res.append(0)
+        i = m
         res = []
-        if not root:
-            return res
-        self.bfs(root, 0, res)
-        return res
+        while i<n:
+            occs[s[i]] = occs.get(s[i],0)+1
+            occs[s[i-m]]-=1
+            if occs[s[i-m]] == 0:
+                del occs[s[i-m]]
+            if occp == occs:
+                res.append(i-m)
+            i+=1
+    def minSumOfLengths(self, arr, target):
+        n = len(arr)
+        res = [] 
 
-    def rightSideView(self, root):
-        """
-        :type root: Optional[TreeNode]
-        :rtype: List[int]
-        """
-        res = []
-        order = self.levelOrder(root)
-        for o in order:
-            res.append(o[len(o)-1])
+        s = [0] * (n + 1)
+        for i in range(1, n + 1):
+            s[i] = s[i - 1] + arr[i - 1]
 
-        return res
+        h = {}
+        for i in range(0, n + 1):
+            h[s[i]] = i
 
-    def __init__(self):
-        self.prev = None
+        for i in range(0, n + 1):
+            if target + s[i] in h:
+                j = h[target + s[i]]
+                res.append((i, j, j - i))
 
-    def flatten(self, root):
-        """
-        :type root: Optional[TreeNode]
-        :rtype: None Do not return anything, modify root in-place instead.
-        """
-        def dfs(node):
-            if not node:
-                return
-            dfs(node.right)    
-            dfs(node.left)       
-            node.left = None    
-            node.right = self.prev   
-            self.prev  = node         
-        dfs(root)
+        if len(res) < 2:
+            return -1
 
-    def coinChange(self, coins, amount):
-        """
-        :type coins: List[int]
-        :type amount: int
-        :rtype: int
-        """
-        dp = [0] *(amount+1)
-        for i in range(1,amount+1):
-            minnum = 100000000
-            for coin in coins:
-                if i>=coin and dp[i-coin]!= -1:
-                    minnum = min(minnum,dp[i-coin]+1)
-            if minnum ==100000000:
-                dp[i] = -1
-            else:
-                dp[i] = minnum
-        return dp[amount]
-    def lengthOfLIS(self, nums):
-        """
-        :type nums: List[int]
-        :rtype: int
-        """
-        n = len(nums)
-        dp=[1]*n
-        for i in range(1,n):
-            maxlength = 1
-            for j in range(0,i):
-                if nums[j]<nums[i]:
-                    maxlength = max(maxlength,dp[j]+1)
-            dp[i] = maxlength
-        return max(dp)
-    
+        ans = n + 1
+        min_len_before = n + 1
+        p = 0
+
+        for i in range(len(res)):
+            left, right, length = res[i]
+
+            while p < i and res[p][1] <= left:
+                if res[p][2] < min_len_before:
+                    min_len_before = res[p][2]
+                p += 1
+            if min_len_before != n + 1:
+                ans = min(ans, min_len_before + length)
+
+        return -1 if ans == n + 1 else ans
     def maxProduct(self, nums):
         """
         :type nums: List[int]
         :rtype: int
         """
-        dp = nums[:]
-        dp1 = nums[:]
-        for i in range(i,len(nums)):
-            dp[i] = max(max(dp[i-1]*nums[i],dp[i]),dp1[i-1]*nums[i])
-            dp1[i] = min(min(dp1[i-1]*nums[i],dp1[i]),dp[i-1]*nums[i])
-        return max(dp)
-    def canPartition(self, nums):
-        total = sum(nums)
-        if total % 2:
-            return False
-
-        target = total // 2
-        dp = [False] * (target + 1)
-        dp[0] = True
-
-        for num in nums:
-            for j in range(target, num - 1, -1): #让变量 j 从 target 开始，每次减 1，一直到 num（包含 num）为止  0/1背包问题
-                dp[j] = dp[j] or dp[j - num]
-
-        return dp[target]
-    def wordBreak(self, s, wordDict):
-        wordDictSet = set(wordDict)
-
-        dp = [False] * (len(s) + 1)
-        dp[0] = True
-
-        for i in range(1, len(s) + 1):
-            for j in range(i):
-                if dp[j] and s[j:i] in wordDictSet:
-                    dp[i] = True
-                    break
-
-        return dp[len(s)]
-    def longestValidParentheses(self, s):
-        """
-        :type s: str
-        :rtype: int
-        """
-        maxans = 0
-        stack = [-1]
-
-        for i, ch in enumerate(s):
-            if ch == '(':
-                stack.append(i)
-            else:
-                stack.pop()
-                if not stack:
-                    stack.append(i)
-                else:
-                    maxans = max(maxans, i - stack[-1])
-
-        return maxans
-    def partitionLabels(self, s):
-        """
-        :type s: str
-        :rtype: List[int]
-        """
-        res =[]
-        minindex = {}
-        maxindex = {}
-        for index, c in enumerate(s):
-            if c not in minindex:
-                minindex[c] = index
-                maxindex[c] = index
-            else:
-                if index >maxindex[c]:
-                    maxindex[c]=index
-                if index<minindex[c]:
-                    minindex[c]=index
-        templeft = -1
-        tempright = -1
-        for c in sorted(minindex, key=lambda x: minindex[x]):
-            if tempright<minindex[c]:
-                if tempright !=-1:
-                    res.append(tempright-templeft+1)
-                templeft = minindex[c]
-                tempright= maxindex[c]
-            elif minindex[c]>templeft and maxindex[c]>tempright:
-                tempright = maxindex[c]
-            elif minindex[c]<templeft and maxindex[c]<tempright:
-                templeft = minindex[c]
-            elif minindex[c]<templeft and maxindex[c]>tempright:
-                templeft = minindex[c]
-                tempright = maxindex[c]
-            else:
-                continue
-        res.append(tempright-templeft+1)
-        return res
-    def reverse(self,head,k):
-        pre = None
-        curr = head
-        if not head or not head.next:
-            return head
-        nex = head.next
-        for i in range(0,k):
-            if not curr:
-                return
-            curr.next = pre
-            pre = curr
-            curr = nex
-            nex = nex.next
-
-    def copyRandomList(self, head):
-        """
-        :type head: Node
-        :rtype: Node
-        """
-        newhead = None
-        h = head
-        nodemap={}
-        while h:
-            curr = Node(h.val)
-            nodemap[h]=curr
-            if h==head:
-                newhead = curr
-            h=h.next
-        h1 = head
-        nh1 = newhead
-        while h1:
-            if not h1.random:
-                nh1.random = None
-            else:
-                nh1.random = nodemap[h1.random]
-            if not h1.next:
-                nh1.next  = None
-            else:
-                nh1.next = nodemap[h1.next]
-            nh1 = nh1.next
-            h1=h1.next
-        return newhead
-    def searchMatrix(self, matrix, target):
-        """
-        :type matrix: List[List[int]]
-        :type target: int
-        :rtype: bool
-        """
-        m =len(matrix)
-        n = len(matrix[0])
-        rowleft = 0
-        rowright = m-1
-        while rowleft<=rowright:
-            mid = (rowright+rowleft) //2
-            if matrix[mid][0] == target:
-                return True
-            if matrix[mid][0] >target:
-                rowright =mid -1
-            if matrix[mid][0]<target:
-                rowleft = mid +1
-        row = rowleft -1
-        cleft = 0
-        cright = n-1
-        while cleft<=cright:
-            mid = (cleft+cright) //2
-            if matrix[row][mid] ==target:
-                return True
-            if matrix[row][mid]>target:
-                cright = mid -1
-            if matrix[row][mid]<target:
-                cleft = mid +1
-        return False
-    def findMin(self, nums):
-        """
-        :type nums: List[int]
-        :rtype: int
-        """
-        minnum = 1000000
-        n = len(nums)
-        if nums[n-1]>nums[0]:
-            return nums[0]
-        l = 0
-        r= n-1
-        while l<=r:
-            m = (l+r)/2
-            if nums[m]<minnum:
-                minnum = nums[m]
-            if nums[m]>=nums[l] :
-                l = m+1
-            else :
-                r= m-1
-        return minnum
+        dpmax = nums[:]
+        dpmin = nums[:]
+        for i in range(1,len(nums)):
+            dpmax[i] = max(max(dpmax[i-1]*nums[i],nums[i]),dpmin[i-1]*nums[i])
+            dpmin[i] = min(min(dpmin[i-1]*nums[i],nums[i]),dpmax[i-1]*nums[i])
+        return max(dpmax)
 
 
-    def longestPalindrome(self, s):
-        n = len(s)
-        if n < 2:
-            return s
-        
-        dp = [[False] * n for _ in range(n)]
-        res = s[0]      
-        max_len = 1
-        for i in range(n):
-            dp[i][i] = True
-        for i in range(n - 1, -1, -1):
-            for j in range(i + 1, n):
-                if s[i] == s[j]:
-                    if j - i == 1:              
-                        dp[i][j] = True
-                    else:                      
-                        dp[i][j] = dp[i+1][j-1]
-                    if dp[i][j] and j - i + 1 > max_len:
-                        max_len = j - i + 1
-                        res = s[i:j+1]
-        return res
-    def findDuplicate(self, nums):
+    def dfs(self,grid,i,j):
+        if i<0 or i>=len(grid) or j<0 or j>=len(grid[0]):
+            return 0
+        if grid[i][j] ==0 or grid[i][j] ==-1:
+            return 0
+        else:
+            temp = grid[i][j]
+            grid[i][j] =-1 
+            t =  temp + self.dfs(grid,i+1,j)+self.dfs(grid,i-1,j) + self.dfs(grid,i,j+1) +self.dfs(grid,i,j-1)
+            return t
+
+
+    def countIslands(self, grid, k):
         """
-        :type nums: List[int]
-        :rtype: int
-        """
-        slow,fast = nums[0],nums[0]
-        while 1:
-            slow = nums[slow]
-            fast = nums[nums[fast]]
-            if slow == fast :
-                break
-        slow = nums[0]
-        while slow!=fast:
-            slow = nums[slow]
-            fast = nums[fast]
-        return slow
-    def quickselect(self,nums,l,r,k):
-        if l == r:
-            return nums[k]
-        p = nums[l]
-        i = l
-        j = r
-        while i<j:
-            while nums[i]<p:
-                i+=1
-            while nums[j]>p:
-                j-=1
-            if i<j:
-                nums[i],nums[j] = nums[j],nums[i]
-            if k<=j:
-                return self.quickselect(nums,l,j,k)
-            else:
-                return self.quickselect(nums,j+1,r,k)
-    def findKthLargest(self, nums, k):
-        """
-        :type nums: List[int]
+        :type grid: List[List[int]]
         :type k: int
         :rtype: int
         """
-        return self.quickselect(nums,0,len(nums)-1,len(nums)-k)
-    def maxSubArray(self, nums):
+        res = []
+        for i in range(len(grid)):
+            for j in range(len(grid[0])):
+                if grid[i][j]!=0 and grid[i][j] !=-1 and  0<=i<=len(grid)-1 and 0<=j<=len(grid[0])-1:
+                    res.append(self.dfs(grid,i,j))
+        count = 0
+        for num in res:
+            if 0 == (num -(num/k)*k):
+                count +=1
+        return count
+
+    def lowestCommonAncestor(self, root, p, q):
         """
-        :type nums: List[int]
-        :rtype: int
+        :type root: TreeNode
+        :type p: TreeNode
+        :type q: TreeNode
+        :rtype: TreeNode
         """
-        temp  = nums[0]
-        res = temp
-        for i in range(1,len(nums)):
-            if temp<0:
-                temp = 0
-            temp +=nums[i]
-            res = max(temp,res)
-        return res
+        if root is p or root is q:
+            return root
+        if not root :
+            return None
+
+        left = self.lowestCommonAncestor(root.left,p,q)
+        right = self.lowestCommonAncestor(root.right,p,q)
+        if left and right:
+            return root    
+
+        if left:
+            return left
+        return right    
+    def pathSum(self, root, targetSum):
+        s = []
+        def preorder(root,s):
 
 
-            
-
-        
-            
-
-
-
-
-        
-
-        
 
         
         
 
 
         
-        
-        
+
+
 
 
 
         
 def main():
-    solution = Solution()
-    print(solution.groupAnagrams(["eat", "tea", "tan", "ate", "nat", "bat"]))
-    print(solution.maxArea([1,8,6,2,5,4,8,3,7]))
-    print(solution.threeSum([-1,0,1,2,-1,-4]))
-    print(solution.trap([0,1,0,2,1,0,1,3,2,1,2,1]))
-
+    print(46515)
 
 if __name__ == "__main__":
     main()

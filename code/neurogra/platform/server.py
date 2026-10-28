@@ -1,4 +1,5 @@
 """Loopback HTTP transport; all business operations use Application services."""
+import base64
 import json
 import secrets
 from http.server import BaseHTTPRequestHandler, ThreadingHTTPServer
@@ -60,6 +61,7 @@ def make_server(app, port=8767):
                 if method == 'GET':
                     assets = {'/': ('index.html', 'text/html; charset=utf-8'),
                               '/app.js': ('app.js', 'text/javascript; charset=utf-8'),
+                              '/features.js': ('features.js', 'text/javascript; charset=utf-8'),
                               '/app.css': ('app.css', 'text/css; charset=utf-8')}
                     if path in assets:
                         name, mime = assets[path]
@@ -67,9 +69,19 @@ def make_server(app, port=8767):
                     if path == '/api/session':
                         return self.reply(200, {'token': token})
                     if path == '/api/health':
-                        return self.reply(200, inspect_environment(app.config))
+                        return self.reply(200, inspect_environment(app.config) | {'workers': app.store.workers()})
+                    if path == '/api/settings':
+                        from .settings import settings_view
+                        return self.reply(200, settings_view(app.config))
                     if path == '/api/profiles':
                         return self.reply(200, {'profiles': PROFILES})
+                    if path == '/api/rwe/status':
+                        from .knowledge import rwe_readiness
+                        return self.reply(200, rwe_readiness(app.config))
+                    if path in {'/api/documents', '/api/knowledge'}:
+                        from .knowledge import KnowledgeManager
+                        manager = KnowledgeManager(app)
+                        return self.reply(200, {'documents': manager.documents()} if path.endswith('documents') else manager.versions())
                     if path == '/api/cases':
                         return self.reply(200, {'cases': app.store.cases()})
                     if len(parts) == 4 and parts[:2] == ['api', 'cases'] and parts[3] == 'versions':
@@ -78,6 +90,10 @@ def make_server(app, port=8767):
                         return self.reply(200, app.case_version(parts[2]))
                     if path == '/api/jobs':
                         return self.reply(200, {'jobs': [app.job(j['job_id']) for j in app.store.jobs()]})
+                    if path == '/api/batches':
+                        return self.reply(200, {'batches': app.batches()})
+                    if len(parts) == 3 and parts[:2] == ['api', 'batches']:
+                        return self.reply(200, app.batch(parts[2]))
                     if len(parts) == 3 and parts[:2] == ['api', 'jobs']:
                         return self.reply(200, app.job(parts[2]))
                     if len(parts) == 3 and parts[:2] == ['api', 'artifacts']:
@@ -89,6 +105,26 @@ def make_server(app, port=8767):
                         from .integrity import inspect_history
                         return self.reply(200, inspect_history(app.config))
                 elif method == 'POST':
+                    if path == '/api/rwe/import':
+                        return self.reply(202, app.submit_rwe(body.get('patient_number')))
+                    if path == '/api/documents':
+                        from .knowledge import KnowledgeManager
+                        content = base64.b64decode(body.get('content', ''), validate=True)
+                        return self.reply(201, KnowledgeManager(app).upload(body.get('name', ''), content))
+                    if path in {'/api/knowledge/build', '/api/documents/preview'}:
+                        from .knowledge import KnowledgeManager
+                        flags = {key: body.get(key, default) for key, default in [('kb', True), ('kg', False), ('vector', True)]}
+                        if not all(isinstance(v, bool) for v in flags.values()):
+                            raise ValueError('知识开关必须为布尔值。')
+                        return self.reply(202, KnowledgeManager(app).submit(body.get('document_ids'),
+                            preview=path.endswith('preview'), **flags))
+                    if path == '/api/knowledge/activate':
+                        from .knowledge import KnowledgeManager
+                        return self.reply(200, KnowledgeManager(app).activate(body.get('module'), body.get('release_id')))
+                    if path == '/api/settings':
+                        from .settings import save_settings, settings_view
+                        app.config = save_settings(app.root, app.config, body)
+                        return self.reply(200, settings_view(app.config))
                     if path == '/api/cases':
                         return self.reply(201, app.import_case(body.get('patient'), source='json_upload'))
                     if path == '/api/jobs':
@@ -100,6 +136,10 @@ def make_server(app, port=8767):
                         profile = body.get('profile', 'standard')
                         config = app.configuration(profile, settings)
                         return self.reply(202, app.submit(body.get('version_id'), config))
+                    if path == '/api/batches':
+                        profile = body.get('profile', 'kb-only')
+                        return self.reply(202, app.submit_batch(body.get('version_ids'),
+                            app.configuration(profile), body.get('name', '病例批量分析')))
                     if len(parts) == 4 and parts[:2] == ['api', 'jobs']:
                         if parts[3] == 'cancel':
                             app.store.cancel(parts[2])
