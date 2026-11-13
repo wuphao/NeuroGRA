@@ -1,0 +1,97 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>对话 · NeuroGRA</title>
+  <link rel="stylesheet" href="/chat.css">
+  <script defer src="/report-view.js"></script>
+  <script type="module" src="/chat.js"></script>
+</head>
+<body>
+  <svg class="sprite" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
+    <symbol id="logo" viewBox="0 0 24 24"><path d="M5 17V7l14 10V7"/><circle cx="5" cy="5" r="2"/><circle cx="19" cy="19" r="2"/></symbol>
+    <symbol id="plus" viewBox="0 0 24 24"><path d="M12 5v14M5 12h14"/></symbol>
+    <symbol id="chat" viewBox="0 0 24 24"><path d="M20 11.5a7.5 7.5 0 0 1-7.5 7.5H5l1.5-3A7.5 7.5 0 1 1 20 11.5Z"/><path d="M9 11.5h6"/></symbol>
+    <symbol id="patients" viewBox="0 0 24 24"><circle cx="10" cy="8" r="3"/><path d="M4 20v-2a6 6 0 0 1 12 0v2m2-15a3 3 0 0 1 0 6m2 9v-2a6 6 0 0 0-2-4"/></symbol>
+    <symbol id="report" viewBox="0 0 24 24"><rect x="5" y="3" width="14" height="18" rx="2"/><path d="M8 8h8m-8 4h8m-8 4h5"/></symbol>
+    <symbol id="spark" viewBox="0 0 24 24"><path d="M12 3c1 5 4 8 9 9-5 1-8 4-9 9-1-5-4-8-9-9 5-1 8-4 9-9Z"/></symbol>
+    <symbol id="chevron" viewBox="0 0 24 24"><path d="m7 10 5 5 5-5"/></symbol>
+    <symbol id="arrow" viewBox="0 0 24 24"><path d="M12 19V5m-6 6 6-6 6 6"/></symbol>
+    <symbol id="search" viewBox="0 0 24 24"><circle cx="10.5" cy="10.5" r="5.5"/><path d="m15 15 5 5"/></symbol>
+    <symbol id="close" viewBox="0 0 24 24"><path d="m6 6 12 12M18 6 6 18"/></symbol>
+    <symbol id="logout" viewBox="0 0 24 24"><path d="M10 4H5v16h5m-1-8h12m-4-4 4 4-4 4"/></symbol>
+    <symbol id="menu" viewBox="0 0 24 24"><rect x="4" y="5" width="16" height="14" rx="2"/><path d="M10 5v14"/></symbol>
+  </svg>
+  <aside class="sidebar" id="sidebar" aria-label="会话与工作区">
+    <a href="/chat" class="brand"><span class="brand-mark"><svg class="icon" aria-hidden="true"><use href="#logo"/></svg></span><span>NeuroGRA<small>病例工作台</small></span></a>
+    <button class="button new-chat" id="new-chat" type="button"><svg class="icon" aria-hidden="true"><use href="#plus"/></svg>新建会话</button>
+    <div class="sidebar-heading">会话</div>
+    <nav id="conversations" class="conversations" aria-label="会话列表"></nav>
+    <button class="button" id="legacy-chat" type="button" hidden>查看旧会话</button>
+    <div class="account"><span id="account-label">RWE 工作区</span><button class="icon-button" id="logout" aria-label="退出登录" type="button"><svg class="icon" aria-hidden="true"><use href="#logout"/></svg></button></div>
+  </aside>
+  <main class="main">
+    <header class="toolbar">
+      <div class="page-title"><button type="button" class="icon-button menu-toggle" id="menu-toggle" aria-label="会话菜单" aria-expanded="false" aria-controls="sidebar"><svg class="icon" aria-hidden="true"><use href="#menu"/></svg></button><h1>对话</h1></div>
+      <div class="actions">
+        <button type="button" class="button" id="choose-patient"><svg class="icon" aria-hidden="true"><use href="#patients"/></svg><span id="patient-label">选择患者</span></button>
+        <button type="button" class="button" id="compare-patient" disabled><svg class="icon" aria-hidden="true"><use href="#patients"/></svg><span id="compare-label">添加对比患者</span></button>
+        <button type="button" class="button primary" id="analyze" disabled><svg class="icon" aria-hidden="true"><use href="#spark"/></svg><span id="analyze-label">智能分析</span></button>
+      </div>
+    </header>
+    <section class="timeline" id="timeline" aria-label="当前会话">
+      <div class="thread">
+        <section class="welcome" id="welcome">
+          <h2>欢迎使用NeuroGRA</h2>
+          <button type="button" class="button primary" id="welcome-patient">选择患者</button>
+        </section>
+        <div class="messages" id="messages" role="log" aria-label="消息记录" aria-live="polite" hidden></div>
+      </div>
+    </section>
+    <footer class="composer-region">
+      <div class="composer-shell" id="composer-shell">
+        <form class="composer" id="composer">
+          <div id="report-context" class="report-context" hidden><span id="context-label"></span><button type="button" class="icon-button" id="clear-context" aria-label="取消报告引用"><svg class="icon" aria-hidden="true"><use href="#close"/></svg></button></div>
+          <textarea id="question" rows="2" maxlength="2000" aria-label="输入消息" placeholder="输入消息…" disabled></textarea>
+          <div class="composer-actions">
+            <button type="button" class="model-trigger" id="model-trigger" aria-label="选择模型" aria-describedby="current-model" aria-expanded="false" aria-controls="model-panel"><span id="current-model">模型</span><svg class="icon chevron" aria-hidden="true"><use href="#chevron"/></svg></button>
+            <button type="submit" class="button primary send" id="send" aria-label="发送" disabled><svg class="icon" aria-hidden="true"><use href="#arrow"/></svg></button>
+          </div>
+        </form>
+        <section class="model-panel" id="model-panel" aria-labelledby="model-panel-title" hidden>
+          <div class="model-panel-head"><h2 id="model-panel-title">切换模型</h2><button type="button" class="icon-button" id="close-model" aria-label="关闭模型选择"><svg class="icon" aria-hidden="true"><use href="#close"/></svg></button></div>
+          <p class="model-current" id="active-model"></p>
+          <form id="model-form" novalidate>
+            <fieldset id="model-fields" disabled>
+              <label>供应商<select id="model-provider"></select></label>
+              <label>模型 ID<input id="model-id" type="text" maxlength="240" required autocomplete="off" placeholder="输入模型 ID 或从列表选择"></label>
+              <label id="model-list-field" hidden>已发现模型<select id="model-list"></select></label>
+              <details id="model-advanced"><summary>高级设置</summary>
+                <label>生成服务地址<input id="model-endpoint" type="url" required></label>
+                <div class="model-numbers">
+                  <label>超时（秒）<input id="model-timeout" type="number" min="1" required></label>
+                  <label>上下文容量<input id="model-context" type="number" min="1" required></label>
+                  <label>最大输出<input id="model-output" type="number" min="1" required></label>
+                </div>
+              </details>
+              <p class="model-note" id="model-key-status"></p>
+              <div class="model-actions"><button class="button" type="button" id="discover-models">获取列表</button><button class="button" type="button" id="test-model">测试连接</button><button class="button primary" type="submit">使用模型</button></div>
+            </fieldset>
+          </form>
+          <p class="status" id="model-status" role="status"></p>
+        </section>
+      </div>
+      <p class="status" id="page-status" role="status"></p>
+    </footer>
+  </main>
+  <dialog id="patient-picker" class="dialog picker" aria-labelledby="picker-title">
+    <div class="dialog-head"><div><h2 id="picker-title">选择患者</h2><p>选中患者后可以问答或启动智能分析</p></div><form method="dialog"><button class="icon-button" aria-label="关闭患者选择"><svg class="icon" aria-hidden="true"><use href="#close"/></svg></button></form></div>
+    <div class="picker-body"><label class="search"><svg class="icon" aria-hidden="true"><use href="#search"/></svg><input id="patient-search" type="search" placeholder="搜索姓名或患者编号" aria-label="搜索姓名或患者编号" maxlength="100" autofocus></label><p class="status" id="picker-status" role="status"></p><div class="patient-options" id="patient-options" aria-label="患者搜索结果"></div><button class="button" id="more-patients" type="button" hidden>查看更多患者</button><button class="button" id="retry-patients" type="button" hidden>重试读取</button></div>
+  </dialog>
+  <dialog id="detail" class="dialog detail" aria-labelledby="detail-title">
+    <div class="dialog-head"><div><h2 id="detail-title">查看详情</h2><p id="detail-subtitle"></p></div><form method="dialog"><button class="icon-button" aria-label="关闭详情"><svg class="icon" aria-hidden="true"><use href="#close"/></svg></button></form></div>
+    <div class="detail-body" id="detail-body"></div>
+  </dialog>
+</body>
+</html>

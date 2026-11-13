@@ -9,7 +9,7 @@ from .locking import exclusive
 from .server import make_server
 
 
-def start(config, port=8767):
+def start(config, port=8767, *, on_ready=None):
     app = Application(config.project_root, config)
     server = make_server(app, port)  # Bind first; do not spawn workers on a port conflict.
     try:
@@ -32,6 +32,8 @@ def start(config, port=8767):
                     time.sleep(.1)
         print(f'NeuroGRA 工作台：http://127.0.0.1:{server.server_port}', flush=True)
         print('后台执行进程已就绪。关闭页面服务不会中断正在执行的分析。', flush=True)
+        if on_ready is not None:
+            on_ready(f'http://127.0.0.1:{server.server_port}')
         server.serve_forever()
     except KeyboardInterrupt:
         pass

@@ -46,6 +46,17 @@ def main():
     inspect.add_argument("--run-id", required=True)
     args = parser.parse_args()
     config = load_config(args.config) if args.config else load_config()
+    from contextlib import nullcontext
+    from neurogra.platform.activity import active
+    from neurogra.platform.locking import exclusive
+    may_use_model = args.command in {'analyze', 'analyze-rwe', 'resume', 'write-narrative',
+                                     'evaluate-retrieval', 'search', 'prepare', 'probe'}
+    lock = exclusive(config.project_root, 'model_resource') if may_use_model else nullcontext()
+    with active(config.project_root, timeout=30), lock:
+        return run_command(args, config)
+
+
+def run_command(args, config):
     if args.command == 'analyze-rwe':
         from .rwe import analyze_rwe, load_rwe_config, RweFailure
         try:

@@ -4,6 +4,7 @@ import os
 import shutil
 
 from neurogra.clinical.llm import http_json
+from neurogra.clinical.generation import GenerationClient, GenerationError
 from neurogra.platform.configuration import public_config
 
 
@@ -38,7 +39,16 @@ def inspect_environment(config, *, services=True):
         add('model:' + name, required, available,
             '检查 Ollama 服务及模型是否已安装' if services else '离线检查：服务尚未验证')
 
-    model_available(config.model.model, config.model.base_url, True)
+    try:
+        generation = GenerationClient(config.model, root)
+    except GenerationError as error:
+        add('model:' + config.model.model, True, False, str(error), provider=config.model.provider)
+    else:
+        if generation.native:
+            model_available(config.model.model, generation.base_url, True)
+        else:
+            add('model:' + config.model.model, True, True if services else None,
+                '已配置云端模型。可在模型设置中运行连通性测试。', provider=config.model.provider)
     if config.knowledge_enabled('kb'):
         try:
             from neurogra_kb import KBConfig, TextKnowledgeService, load_config

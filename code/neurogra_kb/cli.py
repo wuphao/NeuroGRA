@@ -1,5 +1,10 @@
 import argparse
 import json
+from contextlib import nullcontext
+
+from neurogra_common.activity import active
+from neurogra_common.locking import exclusive
+
 from .api import TextKnowledgeService
 from .config import load_config
 
@@ -18,7 +23,14 @@ def main():
     inspect = commands.add_parser("inspect")
     inspect.add_argument("release_id")
     args = parser.parse_args()
-    service = TextKnowledgeService(load_config(args.config))
+    config = load_config(args.config)
+    lock = exclusive(config.root, 'model_resource') if args.command in {'publish', 'query'} else nullcontext()
+    with active(config.root, timeout=30), lock:
+        return run_command(args, config)
+
+
+def run_command(args, config):
+    service = TextKnowledgeService(config)
     if args.command == "publish":
         result = service.publish(args.documents, vector=not args.lexical_only)
     elif args.command == "query":

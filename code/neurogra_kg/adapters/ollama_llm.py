@@ -8,6 +8,7 @@ from pathlib import Path
 from pydantic import BaseModel, ValidationError
 from neurogra_common.schema import grammar_schema
 from neurogra_common.llm_log import logged_model_call, record_llm_event
+from neurogra_common.model_admission import admit_model
 
 from ..config import LLMConfig
 from ..runtime import MODEL_LOCK
@@ -129,8 +130,6 @@ class OllamaLLMAdapter:
             return schema.model_validate(cached["output"])
         errors = []
         for repair in range(self.config.max_format_repair_attempts + 1):
-            if budget:
-                budget.reserve("llm")
             fmt = grammar_schema(output_schema) if self.config.structured_output == "json_schema" else "json"
             request = {"model": self.config.model, "messages": messages, "stream": False,
                        "format": fmt, "keep_alive": self.config.keep_alive,
@@ -144,22 +143,23 @@ class OllamaLLMAdapter:
                    "model_digest": model_digest, "prompt_version": self.prompt_version,
                    "input_hash": identity("input", payload), "attempt": repair}
             try:
-                with MODEL_LOCK:
-                    response = None
-                    for attempt in range(self.config.max_transport_attempts):
-                        if attempt and budget:
-                            budget.reserve("llm")
-                        timeout = min(self.config.timeout_seconds, budget.remaining()) if budget else self.config.timeout_seconds
-                        try:
-                            response = logged_model_call(self.transport, self.config.base_url.rstrip("/") + "/api/chat", request, timeout,
-                                component='kg', task=task, cache_key=cache_key, repair=repair, transport_attempt=attempt)
-                            break
-                        except urllib.error.URLError as exc:
-                            # Retrying an observation timeout may duplicate a still-running request.
-                            if isinstance(exc.reason, TimeoutError) or attempt + 1 == self.config.max_transport_attempts:
-                                raise
-                    if self.model_digest(min(10, budget.remaining()) if budget else 10) != model_digest:
-                        raise ValueError("generation_model_changed_during_call")
+                response = None
+                for attempt in range(self.config.max_transport_attempts):
+                    try:
+                        with admit_model(('knowledge', self.config.base_url, self.config.model, 'llm')):
+                            if budget:
+                                budget.reserve("llm")
+                            timeout = min(self.config.timeout_seconds, budget.remaining()) if budget else self.config.timeout_seconds
+                            with MODEL_LOCK:
+                                response = logged_model_call(self.transport, self.config.base_url.rstrip("/") + "/api/chat", request, timeout,
+                                    component='kg', task=task, cache_key=cache_key, repair=repair, transport_attempt=attempt)
+                                if self.model_digest(min(10, budget.remaining()) if budget else 10) != model_digest:
+                                    raise ValueError("generation_model_changed_during_call")
+                        break
+                    except urllib.error.URLError as exc:
+                        # Retrying an observation timeout may duplicate a still-running request.
+                        if isinstance(exc.reason, TimeoutError) or attempt + 1 == self.config.max_transport_attempts:
+                            raise
                 content = response.get("message", {}).get("content", "")
                 if response.get("done_reason") == "length":
                     raise ValueError("llm_output_truncated")

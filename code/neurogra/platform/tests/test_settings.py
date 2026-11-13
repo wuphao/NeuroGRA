@@ -3,10 +3,28 @@ import unittest
 from pathlib import Path
 
 from neurogra.platform.configuration import resolve_config
-from neurogra.platform.settings import load_settings, save_settings
+from neurogra.platform.settings import load_settings, save_settings, settings_view
 
 
 class SettingsTests(unittest.TestCase):
+    def test_dialogue_budget_is_configurable_and_independent_of_report_budget(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            root = Path(tmp)
+            current = resolve_config(root=root)
+            report_budget = current.budget.model_dump()
+            changed = save_settings(root, current, {'dialogue_budget': {
+                'llm': 9, 'retrieval': 4, 'patient_data': 3, 'embedding': 7,
+                'seconds': 120, 'mixed_seconds': 180}})
+            loaded = load_settings(root)
+            self.assertEqual(loaded, changed)
+            self.assertEqual(loaded.budget.model_dump(), report_budget)
+            self.assertEqual(settings_view(loaded)['dialogue_budget']['patient_data'], 3)
+            self.assertEqual(loaded.dialogue_budget.seconds, 120)
+            self.assertEqual(loaded.dialogue_budget.mixed_seconds, 180)
+            with self.assertRaises(ValueError):
+                save_settings(root, loaded, {'dialogue_budget': {'patient_data': -1}})
+            self.assertEqual(load_settings(root), loaded)
+
     def test_settings_persist_and_do_not_reset_storage(self):
         with tempfile.TemporaryDirectory() as tmp:
             root = Path(tmp)

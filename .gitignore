@@ -100,3 +100,15 @@ docs/病例报告/
 # Browser acceptance artifacts and local test data
 /testing/runs/
 /configs/rwe_batch_patients.txt
+
+# Generated planning, analysis, and presentation outputs
+/outputs/
+
+# Local model credentials (keep the blank example)
+/configs/llm-keys*.env
+!/configs/llm-keys.example.env
+
+# Additional local environments and test caches
+.venv-*/
+.pyright/
+.playwright/

@@ -10,6 +10,8 @@ from http.server import BaseHTTPRequestHandler, ThreadingHTTPServer
 from pathlib import Path
 from urllib.parse import urlsplit
 
+from neurogra.platform.activity import active, tracked
+
 from .config import load_config
 from .rwe import analyze_rwe, load_rwe_config, RweFailure
 from .storage import RunStore
@@ -18,10 +20,11 @@ from .storage import RunStore
 class Workbench:
     def __init__(self, config, rwe_config, runner=analyze_rwe):
         self.config, self.rwe_config, self.runner = config, rwe_config, runner
-        self.store = RunStore(config.resolve(config.database))
+        with active(config.project_root):
+            self.store = RunStore(config.resolve(config.database))
         self.token = secrets.token_urlsafe(32)
         self.lock = threading.Lock()
-        with self.store.connect() as db:
+        with active(config.project_root), self.store.connect() as db:
             db.execute('''CREATE TABLE IF NOT EXISTS web_jobs (
                 job_id TEXT PRIMARY KEY, patient_number TEXT NOT NULL,
                 run_id TEXT, status TEXT NOT NULL, created REAL NOT NULL,
@@ -41,6 +44,7 @@ class Workbench:
                     known.add(row['run_id'])
             return jobs
 
+    @tracked(lambda self: self.config.project_root)
     def submit(self, patient):
         if not isinstance(patient, str) or not patient.strip() or len(patient) > 128 or any(ord(c) < 32 for c in patient):
             raise ValueError('请输入有效的 RWE 患者编号（最长 128 字符）。')
@@ -57,12 +61,15 @@ class Workbench:
             threading.Thread(target=self._run, args=(job_id, patient), daemon=True).start()
         return self.job(job_id)
 
+    @tracked(lambda self: self.config.project_root, timeout=1200)
     def _run(self, job_id, patient):
         def bind(run_id):
             with self.store.connect() as db:
                 db.execute('UPDATE web_jobs SET run_id=? WHERE job_id=?', (run_id, job_id))
         try:
-            result = self.runner(patient, self.config, self.rwe_config, on_run_created=bind)
+            from neurogra_common.locking import exclusive
+            with exclusive(self.config.project_root, 'model_resource'):
+                result = self.runner(patient, self.config, self.rwe_config, on_run_created=bind)
             status, error = result.status, None
         except RweFailure as exc:
             status, error = 'failed', str(exc).split(':export_id=')[0]
@@ -175,7 +182,8 @@ def make_server(app, port=8767):
 
 def serve(config, rwe_config, port=8767):
     """Start the workbench with already constructed Python configuration objects."""
-    store = RunStore(config.resolve(config.database))
+    with active(config.project_root):
+        store = RunStore(config.resolve(config.database))
     with store.workflow_lock('web_service'):
         app = Workbench(config, rwe_config)
         server = make_server(app, port)

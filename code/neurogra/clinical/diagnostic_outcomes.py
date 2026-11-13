@@ -108,6 +108,11 @@ def draft_text(draft):
     return draft.primary_label + '\n' + draft.reasoning
 
 
+def group_has_recorded_fact(group):
+    return any(len(row) >= 3 and row[1] is not None and row[2] in {'observed', 'present', 'absent'}
+               for row in group.get('records', []))
+
+
 def validate_draft(draft, data):
     if isinstance(draft, ClassifiedLayerDraft):
         allowed = {'CN', 'MCI', 'DEMENTIA', 'UNRESOLVED'} if data['level'] == 'syndrome' else {'AD', 'OTHER', 'UNRESOLVED'}
@@ -126,6 +131,10 @@ def validate_draft(draft, data):
         raise ValueError('unknown_medical_evidence')
     if draft.status != 'indeterminate' and (not draft.group_ids or not draft.evidence_ids):
         raise ValueError('working_diagnosis_requires_patient_and_medical_sources')
+    selected = [group for group in data['groups'] if group['id'] in draft.group_ids]
+    if (draft.status != 'indeterminate' and selected and all('records' in group for group in selected) and
+            not any(group_has_recorded_fact(group) for group in selected)):
+        raise ValueError('working_diagnosis_requires_recorded_patient_fact')
     if draft.status == 'conditional_diagnosis' and not draft.missing_conditions:
         raise ValueError('conditional_diagnosis_requires_conditions')
     if draft.status == 'indeterminate' and not draft.missing_conditions:
@@ -186,8 +195,10 @@ def diagnose_layer(snapshot, evidence, config, store, run_id, level):
     manifest = {'included_observations': sum(map(len, mapping.values())), 'source_observations': len(snapshot.observations),
                 'group_mapping': mapping, 'source_mapping': source_mapping,
                 'excluded_evidence_ids': [e.evidence_id for e in evidence if e.evidence_id not in source_mapping.values()]}
-    if not groups or not chosen:
-        reason = '缺少患者事实，不能形成当前判断。' if not groups else '本层未获得可核验的医学原文依据；需补充相应诊断规则。'
+    if not groups or not chosen or not any(group_has_recorded_fact(group) for group in groups):
+        reason = ('缺少可核实的患者事实，不能形成当前判断。' if not groups or
+                  not any(group_has_recorded_fact(group) for group in groups) else
+                  '本层未获得可核验的医学原文依据；需补充相应诊断规则。')
         return DiagnosisLayer(level=level, status='indeterminate', reasoning=reason,
                               missing_conditions=[reason]), manifest
     model = config.model.model_copy(update={'context_tokens': config.diagnosis_context_tokens,
@@ -201,9 +212,20 @@ def diagnose_layer(snapshot, evidence, config, store, run_id, level):
             prompt = GENERATE + CLASSIFICATION_PROMPT if config.research_classification else GENERATE
             draft = checked_call(gateway, prompt, request, draft_schema, lambda d: validate_draft(d, data))
             used = [e for e in data['evidence'] if e['id'] in draft.evidence_ids]
-            if draft.status == 'working_diagnosis' and any(e['allowed_use'] == 'background' or e['applicability'] != 'applicable' for e in used):
+            limitations = []
+            if draft.status != 'indeterminate' and any(
+                    e['allowed_use'] == 'background' or e['applicability'] != 'applicable' for e in used):
+                limitations.append('所用医学原文的患者适用条件尚未完全核实，本结论为条件性工作判断。')
+            conflicted = {group_id for group in data['conflict_groups'] for group_id in group}
+            if draft.status != 'indeterminate' and conflicted.intersection(draft.group_ids):
+                limitations.append('所引用患者记录存在未解决冲突，相关条件需核对。')
+            if limitations:
                 draft.status = 'conditional_diagnosis'
-                draft.missing_conditions = list(dict.fromkeys([*draft.missing_conditions, '所用医学原文的患者适用条件尚未完全核实，本结论为条件性工作判断。']))
+                prior = [item for item in dict.fromkeys(draft.missing_conditions) if item not in limitations]
+                available = 6 - len(limitations)
+                if len(prior) > available:
+                    prior = prior[:available - 1] + ['另有未展示的条件，需查看诊断草稿。']
+                draft.missing_conditions = [*prior, *limitations]
             store.save(run_id, 'diagnosis_layer_draft', level + '_' + str(attempt), draft)
             review_data = {**data, 'draft': draft.model_dump(mode='json')}
             review = checked_call(gateway, REVIEW, review_data, LayerReview, lambda r: validate_review(r, draft, data))

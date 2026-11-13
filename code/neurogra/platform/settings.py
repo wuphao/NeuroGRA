@@ -2,12 +2,24 @@
 from pathlib import Path
 from urllib.parse import urlsplit
 
+from neurogra.clinical.config import ModelConfig
+from neurogra.clinical.generation import (
+    EXTERNAL_FLAG,
+    KEY_FILE,
+    PROVIDERS,
+    GenerationClient,
+    provider_endpoint,
+    read_credentials,
+)
 from neurogra.clinical.utils import write_json
 
+from .activity import active
 from .configuration import merge, public_config, resolve_config
+from .locking import ResourceBusy, exclusive
 
-EDITABLE = {'model', 'budget', 'main_agent', 'agents', 'max_rounds', 'max_parallel_tasks',
-            'verify_narrative', 'synthesis_reserved_calls', 'llm_debug_logging', 'kb', 'kg'}
+EDITABLE = {'model', 'budget', 'dialogue_budget', 'main_agent', 'agents', 'max_rounds', 'max_parallel_tasks',
+            'verify_narrative', 'synthesis_reserved_calls', 'llm_debug_logging', 'kb', 'kg', 'report_followup_delegation',
+            'patient_comparison_workflow', 'patient_comparison_reuse'}
 
 
 def settings_path(root):
@@ -24,8 +36,7 @@ def load_settings(root):
 
 
 def save_settings(root, current, values):
-    from .locking import exclusive
-    with exclusive(root, 'settings-update'):
+    with active(root), exclusive(root, 'settings-update'):
         return _save_settings(root, current, values)
 
 
@@ -58,6 +69,7 @@ def _save_settings(root, current, values):
     if any(urlsplit(url).scheme not in {'http', 'https'} or not urlsplit(url).hostname
            or urlsplit(url).username or urlsplit(url).password for url in endpoints):
         raise ValueError('模型地址必须是无内嵌凭据的 HTTP/HTTPS 地址。')
+    provider_endpoint(config.model)
     if config.model.context_tokens <= config.model.max_output_tokens + config.model.context.safety_tokens:
         raise ValueError('上下文容量不足以容纳输出与安全预留。')
     if config.budget.llm <= config.synthesis_reserved_calls:
@@ -69,3 +81,34 @@ def _save_settings(root, current, values):
 def settings_view(config):
     value = public_config(config)
     return {k: v for k, v in value.items() if k in EDITABLE}
+
+
+def model_settings_view(config):
+    credentials = read_credentials(config.project_root)
+    return {
+        'model': config.model.model_dump(mode='json'),
+        'effective_endpoint': provider_endpoint(config.model),
+        'credentials_file': KEY_FILE,
+        'external_patient_data': credentials.get(EXTERNAL_FLAG, '').lower() == 'true',
+        'providers': [{'id': name, 'label': label, 'endpoint': endpoint, 'key_required': bool(key),
+                       'key_configured': bool(credentials.get(key)) if key else None}
+                      for name, (label, endpoint, key) in PROVIDERS.items()],
+    }
+
+
+def model_operation(config, values, operation):
+    if not set(values) <= {'provider', 'model', 'base_url', 'timeout_seconds', 'max_output_tokens', 'context_tokens'}:
+        raise ValueError('Key 请填写在本地文件。接口只接收模型运行参数。')
+    model = ModelConfig.model_validate({**config.model.model_dump(), **values})
+    client = GenerationClient(model, config.project_root, patient_data=False)
+    if operation == 'models':
+        return {'models': client.models()}
+    try:
+        with exclusive(config.project_root, 'model_resource'):
+            reply = client.complete([{'role': 'user', 'content': 'Reply with the single word OK.'}],
+                                    min(model.timeout_seconds, 30), output_tokens=128)
+    except ResourceBusy:
+        raise ValueError('模型资源正在使用，请稍后测试。') from None
+    if not isinstance(reply, dict) or not str(reply.get('content') or '').strip():
+        raise ValueError('模型已连接，但未返回文本。请核对所选模型。')
+    return {'ok': True, 'provider': model.provider, 'model': model.model}

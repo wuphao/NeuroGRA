@@ -21,9 +21,9 @@ class AgentConfig(KnowledgeAccess):
 
 
 class ModelConfig(Contract):
-    provider: Literal["ollama"] = "ollama"
+    provider: Literal['ollama', 'openrouter', 'deepseek', 'openai'] = 'ollama'
     base_url: str = "http://localhost:11434"
-    model: str = "qwen3.8:27b"
+    model: str = Field(default='qwen3.8:27b', min_length=1, max_length=240, pattern=r'\S')
     timeout_seconds: float = Field(default=120, gt=0)
     max_output_tokens: int = Field(default=4096, gt=0)
     context_tokens: int = Field(default=16384, gt=0)
@@ -41,6 +41,15 @@ class BudgetConfig(Contract):
     seconds: float = Field(default=900, gt=0)
 
 
+class DialogueBudgetConfig(Contract):
+    llm: int = Field(default=32, ge=0)
+    retrieval: int = Field(default=12, ge=0)
+    patient_data: int = Field(default=12, ge=0)
+    embedding: int = Field(default=128, ge=0)
+    seconds: float = Field(default=900, gt=0)
+    mixed_seconds: float = Field(default=1200, gt=0)
+
+
 class VectorConfig(Contract):
     base_url: str = 'http://localhost:11434'
     model: str = 'qwen3-embedding:0.6b'
@@ -52,6 +61,9 @@ class VectorConfig(Contract):
 
 
 class ClinicalConfig(Contract):
+    report_followup_delegation: bool = True
+    patient_comparison_workflow: bool = True
+    patient_comparison_reuse: bool = True
     main_agent: KnowledgeAccess = Field(default_factory=KnowledgeAccess)
     agents: dict[Role, AgentConfig] = Field(default_factory=lambda: {r: AgentConfig() for r in ROLES})
     kb: KBConfig | None = None
@@ -81,6 +93,7 @@ class ClinicalConfig(Contract):
     diagnosis_max_evidence: int = Field(default=8, ge=4, le=12)
     model: ModelConfig = Field(default_factory=ModelConfig)
     budget: BudgetConfig = Field(default_factory=BudgetConfig)
+    dialogue_budget: DialogueBudgetConfig = Field(default_factory=DialogueBudgetConfig)
     max_parallel_tasks: int = Field(default=4, ge=1, le=8)
     task_budget: TaskBudget = Field(default_factory=TaskBudget)
     verify_narrative: bool = False

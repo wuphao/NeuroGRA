@@ -55,6 +55,12 @@ class ContextBuilder:
         evidence = select_evidence(context.evidence, batch, policy.evidence_chars)
         evidence_aliases = {f'E{i + 1}': e for i, e in enumerate(evidence)}
         aliases.update(background_aliases)
+        reverse_aliases = {observation.observation_id: alias for alias, observation in aliases.items()}
+        conflicts = []
+        for group in context.snapshot.conflict_groups:
+            visible = [reverse_aliases[ref] for ref in group if ref in reverse_aliases]
+            if visible:
+                conflicts.append({'observation_ids': visible, 'omitted_in_batch': len(group) - len(visible)})
         receipts, omitted_receipts = bounded_rows(
             [tool_receipt(r) for r in reversed(context.request_outcomes)], policy.receipt_chars)
         excerpts, omitted_excerpts = bounded_rows(list(source_context_rows(context.additional_context)),
@@ -71,7 +77,7 @@ class ContextBuilder:
                              for alias, e in evidence_aliases.items()],
                 'questions': task.questions, 'batch': batch_index + 1,
                 'request_outcomes': receipts, 'additional_context': excerpts,
-                'source_pages': source_pages,
+                'source_pages': source_pages, 'conflict_groups': conflicts,
                 'scope': '仅分析本批；省略不代表未检查或阴性。完整资料可由主Agent按引用回读。',
                 'availability': {'total_observations': len(facts), 'selected_observations': len(aliases),
                     'omitted_observations': len(facts) - len(aliases),

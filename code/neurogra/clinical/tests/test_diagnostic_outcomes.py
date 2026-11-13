@@ -42,6 +42,15 @@ class OutcomeTests(unittest.TestCase):
         self.draft.missing_conditions = ['方法条件未核实']
         validate_draft(self.draft, self.data)
 
+    def test_diagnosis_cannot_cite_only_unrecorded_patient_groups(self):
+        data = {'groups': [{'id': 'G1', 'records': [[None, None, 'not_recorded']]},
+                           {'id': 'G2', 'records': [['2025-01-01', 23, 'observed']]}],
+                'evidence': [{'id': 'K1'}]}
+        with self.assertRaisesRegex(ValueError, 'requires_recorded_patient_fact'):
+            validate_draft(self.draft, data)
+        self.draft.group_ids = ['G2']
+        validate_draft(self.draft, data)
+
     def test_unknown_and_duplicate_ids_rejected(self):
         self.draft.group_ids = ['G2']
         with self.assertRaisesRegex(ValueError, 'unknown_patient_group'):

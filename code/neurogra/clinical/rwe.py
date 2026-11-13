@@ -16,17 +16,28 @@ class RweFailure(RuntimeError):
     """Stable error codes; do not echo credentials or remote response bodies."""
 
 
+class RweComparison(Contract):
+    score_field: str
+    version_field: str | None = None
+    scoring_field: str | None = None
+    fixed_version: str | None = None
+    fixed_scoring: str | None = None
+
+
 class RweForm(Contract):
     key: str
     form_id: int = Field(gt=0)
     name: str
     date_field: str | None = None
+    comparison: RweComparison | None = None
 
 
 class RweConfig(Contract):
     project_id: int = Field(gt=0)
     settings_file: Path = Path('.env.rwe.local')
     timeout_seconds: float = Field(default=30, gt=0, le=120)
+    # Enable only after verifying that this source supplies complete, consistent patient snapshots.
+    consistent_patient_snapshot: bool = False
     forms: list[RweForm] = Field(min_length=1)
 
 

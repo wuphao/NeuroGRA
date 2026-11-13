@@ -1,0 +1,741 @@
+{
+  "version": 1,
+  "kind": "synthetic_routing_probes",
+  "scope": "检查路由信号；不替代任务执行和回答质量验收",
+  "cases": [
+    {
+      "id": "Q01",
+      "category": "事实",
+      "split": "development",
+      "question": "读取这个患者的 MoCA 总分",
+      "selected_patient": "synthetic-primary",
+      "comparison_patients": [],
+      "expected_signals": {
+        "report": false,
+        "cross": false,
+        "cohort": false
+      },
+      "expected_boundary": "仅使用已授权患者和项目本地知识；缺资料或范围不清时澄清，不猜测患者；报告重算仍按资料版本确认",
+      "status": "not_run"
+    },
+    {
+      "id": "Q02",
+      "category": "事实",
+      "split": "development",
+      "question": "这个患者有哪些检验记录？",
+      "selected_patient": "synthetic-primary",
+      "comparison_patients": [],
+      "expected_signals": {
+        "report": false,
+        "cross": false,
+        "cohort": false
+      },
+      "expected_boundary": "仅使用已授权患者和项目本地知识；缺资料或范围不清时澄清，不猜测患者；报告重算仍按资料版本确认",
+      "status": "not_run"
+    },
+    {
+      "id": "Q03",
+      "category": "事实",
+      "split": "development",
+      "question": "查看患者最近的检查结果",
+      "selected_patient": "synthetic-primary",
+      "comparison_patients": [],
+      "expected_signals": {
+        "report": false,
+        "cross": false,
+        "cohort": false
+      },
+      "expected_boundary": "仅使用已授权患者和项目本地知识；缺资料或范围不清时澄清，不猜测患者；报告重算仍按资料版本确认",
+      "status": "not_run"
+    },
+    {
+      "id": "Q04",
+      "category": "事实",
+      "split": "development",
+      "question": "患者的年龄是多少？",
+      "selected_patient": "synthetic-primary",
+      "comparison_patients": [],
+      "expected_signals": {
+        "report": false,
+        "cross": false,
+        "cohort": false
+      },
+      "expected_boundary": "仅使用已授权患者和项目本地知识；缺资料或范围不清时澄清，不猜测患者；报告重算仍按资料版本确认",
+      "status": "not_run"
+    },
+    {
+      "id": "Q05",
+      "category": "事实",
+      "split": "acceptance",
+      "question": "查看这位患者的病史",
+      "selected_patient": "synthetic-primary",
+      "comparison_patients": [],
+      "expected_signals": {
+        "report": false,
+        "cross": false,
+        "cohort": false
+      },
+      "expected_boundary": "仅使用已授权患者和项目本地知识；缺资料或范围不清时澄清，不猜测患者；报告重算仍按资料版本确认",
+      "status": "not_run"
+    },
+    {
+      "id": "Q06",
+      "category": "事实",
+      "split": "acceptance",
+      "question": "没有记录时请告诉我缺失情况",
+      "selected_patient": "synthetic-primary",
+      "comparison_patients": [],
+      "expected_signals": {
+        "report": false,
+        "cross": false,
+        "cohort": false
+      },
+      "expected_boundary": "仅使用已授权患者和项目本地知识；缺资料或范围不清时澄清，不猜测患者；报告重算仍按资料版本确认",
+      "status": "not_run"
+    },
+    {
+      "id": "Q07",
+      "category": "纵向",
+      "split": "development",
+      "question": "比较这个患者最近两次 MoCA",
+      "selected_patient": "synthetic-primary",
+      "comparison_patients": [],
+      "expected_signals": {
+        "report": false,
+        "cross": false,
+        "cohort": false
+      },
+      "expected_boundary": "仅使用已授权患者和项目本地知识；缺资料或范围不清时澄清，不猜测患者；报告重算仍按资料版本确认",
+      "status": "not_run"
+    },
+    {
+      "id": "Q08",
+      "category": "纵向",
+      "split": "development",
+      "question": "这个患者的 MoCA 前后变化如何？",
+      "selected_patient": "synthetic-primary",
+      "comparison_patients": [],
+      "expected_signals": {
+        "report": false,
+        "cross": false,
+        "cohort": false
+      },
+      "expected_boundary": "仅使用已授权患者和项目本地知识；缺资料或范围不清时澄清，不猜测患者；报告重算仍按资料版本确认",
+      "status": "not_run"
+    },
+    {
+      "id": "Q09",
+      "category": "纵向",
+      "split": "development",
+      "question": "查看患者历次评分趋势",
+      "selected_patient": "synthetic-primary",
+      "comparison_patients": [],
+      "expected_signals": {
+        "report": false,
+        "cross": false,
+        "cohort": false
+      },
+      "expected_boundary": "仅使用已授权患者和项目本地知识；缺资料或范围不清时澄清，不猜测患者；报告重算仍按资料版本确认",
+      "status": "not_run"
+    },
+    {
+      "id": "Q10",
+      "category": "纵向",
+      "split": "development",
+      "question": "比较患者这次和上次的结果",
+      "selected_patient": "synthetic-primary",
+      "comparison_patients": [],
+      "expected_signals": {
+        "report": false,
+        "cross": false,
+        "cohort": false
+      },
+      "expected_boundary": "仅使用已授权患者和项目本地知识；缺资料或范围不清时澄清，不猜测患者；报告重算仍按资料版本确认",
+      "status": "not_run"
+    },
+    {
+      "id": "Q11",
+      "category": "纵向",
+      "split": "acceptance",
+      "question": "分析患者的 MMSE 变化",
+      "selected_patient": "synthetic-primary",
+      "comparison_patients": [],
+      "expected_signals": {
+        "report": false,
+        "cross": false,
+        "cohort": false
+      },
+      "expected_boundary": "仅使用已授权患者和项目本地知识；缺资料或范围不清时澄清，不猜测患者；报告重算仍按资料版本确认",
+      "status": "not_run"
+    },
+    {
+      "id": "Q12",
+      "category": "纵向",
+      "split": "acceptance",
+      "question": "该患者的检验指标随访趋势怎样？",
+      "selected_patient": "synthetic-primary",
+      "comparison_patients": [],
+      "expected_signals": {
+        "report": false,
+        "cross": false,
+        "cohort": false
+      },
+      "expected_boundary": "仅使用已授权患者和项目本地知识；缺资料或范围不清时澄清，不猜测患者；报告重算仍按资料版本确认",
+      "status": "not_run"
+    },
+    {
+      "id": "Q13",
+      "category": "局部",
+      "split": "development",
+      "question": "分析这个患者的 MoCA 结果",
+      "selected_patient": "synthetic-primary",
+      "comparison_patients": [],
+      "expected_signals": {
+        "report": false,
+        "cross": false,
+        "cohort": false
+      },
+      "expected_boundary": "仅使用已授权患者和项目本地知识；缺资料或范围不清时澄清，不猜测患者；报告重算仍按资料版本确认",
+      "status": "not_run"
+    },
+    {
+      "id": "Q14",
+      "category": "局部",
+      "split": "development",
+      "question": "全面分析这个患者的 MMSE 变化",
+      "selected_patient": "synthetic-primary",
+      "comparison_patients": [],
+      "expected_signals": {
+        "report": false,
+        "cross": false,
+        "cohort": false
+      },
+      "expected_boundary": "仅使用已授权患者和项目本地知识；缺资料或范围不清时澄清，不猜测患者；报告重算仍按资料版本确认",
+      "status": "not_run"
+    },
+    {
+      "id": "Q15",
+      "category": "局部",
+      "split": "development",
+      "question": "评估该患者的检验结果",
+      "selected_patient": "synthetic-primary",
+      "comparison_patients": [],
+      "expected_signals": {
+        "report": false,
+        "cross": false,
+        "cohort": false
+      },
+      "expected_boundary": "仅使用已授权患者和项目本地知识；缺资料或范围不清时澄清，不猜测患者；报告重算仍按资料版本确认",
+      "status": "not_run"
+    },
+    {
+      "id": "Q16",
+      "category": "局部",
+      "split": "development",
+      "question": "解读这个患者的影像报告",
+      "selected_patient": "synthetic-primary",
+      "comparison_patients": [],
+      "expected_signals": {
+        "report": false,
+        "cross": false,
+        "cohort": false
+      },
+      "expected_boundary": "仅使用已授权患者和项目本地知识；缺资料或范围不清时澄清，不猜测患者；报告重算仍按资料版本确认",
+      "status": "not_run"
+    },
+    {
+      "id": "Q17",
+      "category": "局部",
+      "split": "acceptance",
+      "question": "解释患者的病史和认知情况",
+      "selected_patient": "synthetic-primary",
+      "comparison_patients": [],
+      "expected_signals": {
+        "report": false,
+        "cross": false,
+        "cohort": false
+      },
+      "expected_boundary": "仅使用已授权患者和项目本地知识；缺资料或范围不清时澄清，不猜测患者；报告重算仍按资料版本确认",
+      "status": "not_run"
+    },
+    {
+      "id": "Q18",
+      "category": "局部",
+      "split": "acceptance",
+      "question": "不用完整报告，只分析这个患者的量表",
+      "selected_patient": "synthetic-primary",
+      "comparison_patients": [],
+      "expected_signals": {
+        "report": false,
+        "cross": false,
+        "cohort": false
+      },
+      "expected_boundary": "仅使用已授权患者和项目本地知识；缺资料或范围不清时澄清，不猜测患者；报告重算仍按资料版本确认",
+      "status": "not_run"
+    },
+    {
+      "id": "Q19",
+      "category": "报告",
+      "split": "development",
+      "question": "综合分析这个患者",
+      "selected_patient": "synthetic-primary",
+      "comparison_patients": [],
+      "expected_signals": {
+        "report": true,
+        "cross": false,
+        "cohort": false
+      },
+      "expected_boundary": "仅使用已授权患者和项目本地知识；缺资料或范围不清时澄清，不猜测患者；报告重算仍按资料版本确认",
+      "status": "not_run"
+    },
+    {
+      "id": "Q20",
+      "category": "报告",
+      "split": "development",
+      "question": "给我这个患者的完整分析报告",
+      "selected_patient": "synthetic-primary",
+      "comparison_patients": [],
+      "expected_signals": {
+        "report": true,
+        "cross": false,
+        "cohort": false
+      },
+      "expected_boundary": "仅使用已授权患者和项目本地知识；缺资料或范围不清时澄清，不猜测患者；报告重算仍按资料版本确认",
+      "status": "not_run"
+    },
+    {
+      "id": "Q21",
+      "category": "报告",
+      "split": "development",
+      "question": "出具完整报告",
+      "selected_patient": "synthetic-primary",
+      "comparison_patients": [],
+      "expected_signals": {
+        "report": true,
+        "cross": false,
+        "cohort": false
+      },
+      "expected_boundary": "仅使用已授权患者和项目本地知识；缺资料或范围不清时澄清，不猜测患者；报告重算仍按资料版本确认",
+      "status": "not_run"
+    },
+    {
+      "id": "Q22",
+      "category": "报告",
+      "split": "development",
+      "question": "生成病例报告",
+      "selected_patient": "synthetic-primary",
+      "comparison_patients": [],
+      "expected_signals": {
+        "report": true,
+        "cross": false,
+        "cohort": false
+      },
+      "expected_boundary": "仅使用已授权患者和项目本地知识；缺资料或范围不清时澄清，不猜测患者；报告重算仍按资料版本确认",
+      "status": "not_run"
+    },
+    {
+      "id": "Q23",
+      "category": "报告",
+      "split": "acceptance",
+      "question": "对患者进行整体评估",
+      "selected_patient": "synthetic-primary",
+      "comparison_patients": [],
+      "expected_signals": {
+        "report": true,
+        "cross": false,
+        "cohort": false
+      },
+      "expected_boundary": "仅使用已授权患者和项目本地知识；缺资料或范围不清时澄清，不猜测患者；报告重算仍按资料版本确认",
+      "status": "not_run"
+    },
+    {
+      "id": "Q24",
+      "category": "报告",
+      "split": "acceptance",
+      "question": "不要生成报告，只读取 MoCA",
+      "selected_patient": "synthetic-primary",
+      "comparison_patients": [],
+      "expected_signals": {
+        "report": false,
+        "cross": false,
+        "cohort": false
+      },
+      "expected_boundary": "仅使用已授权患者和项目本地知识；缺资料或范围不清时澄清，不猜测患者；报告重算仍按资料版本确认",
+      "status": "not_run"
+    },
+    {
+      "id": "Q25",
+      "category": "报告追问",
+      "split": "development",
+      "question": "这份报告的结论有哪些依据？",
+      "selected_patient": "synthetic-primary",
+      "comparison_patients": [],
+      "expected_signals": {
+        "report": false,
+        "cross": false,
+        "cohort": false
+      },
+      "expected_boundary": "仅使用已授权患者和项目本地知识；缺资料或范围不清时澄清，不猜测患者；报告重算仍按资料版本确认",
+      "status": "not_run"
+    },
+    {
+      "id": "Q26",
+      "category": "报告追问",
+      "split": "development",
+      "question": "解释报告中提到的不确定性",
+      "selected_patient": "synthetic-primary",
+      "comparison_patients": [],
+      "expected_signals": {
+        "report": false,
+        "cross": false,
+        "cohort": false
+      },
+      "expected_boundary": "仅使用已授权患者和项目本地知识；缺资料或范围不清时澄清，不猜测患者；报告重算仍按资料版本确认",
+      "status": "not_run"
+    },
+    {
+      "id": "Q27",
+      "category": "报告追问",
+      "split": "development",
+      "question": "这份报告使用了哪些患者资料？",
+      "selected_patient": "synthetic-primary",
+      "comparison_patients": [],
+      "expected_signals": {
+        "report": false,
+        "cross": false,
+        "cohort": false
+      },
+      "expected_boundary": "仅使用已授权患者和项目本地知识；缺资料或范围不清时澄清，不猜测患者；报告重算仍按资料版本确认",
+      "status": "not_run"
+    },
+    {
+      "id": "Q28",
+      "category": "报告追问",
+      "split": "development",
+      "question": "报告为什么保留待定判断？",
+      "selected_patient": "synthetic-primary",
+      "comparison_patients": [],
+      "expected_signals": {
+        "report": false,
+        "cross": false,
+        "cohort": false
+      },
+      "expected_boundary": "仅使用已授权患者和项目本地知识；缺资料或范围不清时澄清，不猜测患者；报告重算仍按资料版本确认",
+      "status": "not_run"
+    },
+    {
+      "id": "Q29",
+      "category": "报告追问",
+      "split": "acceptance",
+      "question": "报告与当前患者资料是否一致？",
+      "selected_patient": "synthetic-primary",
+      "comparison_patients": [],
+      "expected_signals": {
+        "report": false,
+        "cross": false,
+        "cohort": false
+      },
+      "expected_boundary": "仅使用已授权患者和项目本地知识；缺资料或范围不清时澄清，不猜测患者；报告重算仍按资料版本确认",
+      "status": "not_run"
+    },
+    {
+      "id": "Q30",
+      "category": "报告追问",
+      "split": "acceptance",
+      "question": "查看这份报告的来源",
+      "selected_patient": "synthetic-primary",
+      "comparison_patients": [],
+      "expected_signals": {
+        "report": false,
+        "cross": false,
+        "cohort": false
+      },
+      "expected_boundary": "仅使用已授权患者和项目本地知识；缺资料或范围不清时澄清，不猜测患者；报告重算仍按资料版本确认",
+      "status": "not_run"
+    },
+    {
+      "id": "Q31",
+      "category": "比较",
+      "split": "development",
+      "question": "比较两位患者的 MoCA",
+      "selected_patient": "synthetic-primary",
+      "comparison_patients": [
+        "synthetic-other"
+      ],
+      "expected_signals": {
+        "report": false,
+        "cross": true,
+        "cohort": false
+      },
+      "expected_boundary": "仅使用已授权患者和项目本地知识；缺资料或范围不清时澄清，不猜测患者；报告重算仍按资料版本确认",
+      "status": "not_run"
+    },
+    {
+      "id": "Q32",
+      "category": "比较",
+      "split": "development",
+      "question": "对比这两人的认知记录",
+      "selected_patient": "synthetic-primary",
+      "comparison_patients": [
+        "synthetic-other"
+      ],
+      "expected_signals": {
+        "report": false,
+        "cross": true,
+        "cohort": false
+      },
+      "expected_boundary": "仅使用已授权患者和项目本地知识；缺资料或范围不清时澄清，不猜测患者；报告重算仍按资料版本确认",
+      "status": "not_run"
+    },
+    {
+      "id": "Q33",
+      "category": "比较",
+      "split": "development",
+      "question": "两位病人的评分差异是什么？",
+      "selected_patient": "synthetic-primary",
+      "comparison_patients": [
+        "synthetic-other"
+      ],
+      "expected_signals": {
+        "report": false,
+        "cross": true,
+        "cohort": false
+      },
+      "expected_boundary": "仅使用已授权患者和项目本地知识；缺资料或范围不清时澄清，不猜测患者；报告重算仍按资料版本确认",
+      "status": "not_run"
+    },
+    {
+      "id": "Q34",
+      "category": "比较",
+      "split": "development",
+      "question": "比较患者甲和患者乙的结果",
+      "selected_patient": "synthetic-primary",
+      "comparison_patients": [
+        "synthetic-other"
+      ],
+      "expected_signals": {
+        "report": false,
+        "cross": true,
+        "cohort": false
+      },
+      "expected_boundary": "仅使用已授权患者和项目本地知识；缺资料或范围不清时澄清，不猜测患者；报告重算仍按资料版本确认",
+      "status": "not_run"
+    },
+    {
+      "id": "Q35",
+      "category": "比较",
+      "split": "acceptance",
+      "question": "不要比较两位患者，只分析当前患者",
+      "selected_patient": "synthetic-primary",
+      "comparison_patients": [],
+      "expected_signals": {
+        "report": false,
+        "cross": false,
+        "cohort": false
+      },
+      "expected_boundary": "仅使用已授权患者和项目本地知识；缺资料或范围不清时澄清，不猜测患者；报告重算仍按资料版本确认",
+      "status": "not_run"
+    },
+    {
+      "id": "Q36",
+      "category": "比较",
+      "split": "acceptance",
+      "question": "不用对比其他患者，读取这位患者的记录",
+      "selected_patient": "synthetic-primary",
+      "comparison_patients": [],
+      "expected_signals": {
+        "report": false,
+        "cross": false,
+        "cohort": false
+      },
+      "expected_boundary": "仅使用已授权患者和项目本地知识；缺资料或范围不清时澄清，不猜测患者；报告重算仍按资料版本确认",
+      "status": "not_run"
+    },
+    {
+      "id": "Q37",
+      "category": "统计",
+      "split": "development",
+      "question": "统计所有患者的 MoCA 均值",
+      "selected_patient": "synthetic-primary",
+      "comparison_patients": [],
+      "expected_signals": {
+        "report": false,
+        "cross": false,
+        "cohort": true
+      },
+      "expected_boundary": "仅使用已授权患者和项目本地知识；缺资料或范围不清时澄清，不猜测患者；报告重算仍按资料版本确认",
+      "status": "not_run"
+    },
+    {
+      "id": "Q38",
+      "category": "统计",
+      "split": "development",
+      "question": "本项目有多少患者？",
+      "selected_patient": "synthetic-primary",
+      "comparison_patients": [],
+      "expected_signals": {
+        "report": false,
+        "cross": false,
+        "cohort": true
+      },
+      "expected_boundary": "仅使用已授权患者和项目本地知识；缺资料或范围不清时澄清，不猜测患者；报告重算仍按资料版本确认",
+      "status": "not_run"
+    },
+    {
+      "id": "Q39",
+      "category": "统计",
+      "split": "development",
+      "question": "统计队列中有记录的人数",
+      "selected_patient": "synthetic-primary",
+      "comparison_patients": [],
+      "expected_signals": {
+        "report": false,
+        "cross": false,
+        "cohort": true
+      },
+      "expected_boundary": "仅使用已授权患者和项目本地知识；缺资料或范围不清时澄清，不猜测患者；报告重算仍按资料版本确认",
+      "status": "not_run"
+    },
+    {
+      "id": "Q40",
+      "category": "统计",
+      "split": "development",
+      "question": "计算群体的平均评分",
+      "selected_patient": "synthetic-primary",
+      "comparison_patients": [],
+      "expected_signals": {
+        "report": false,
+        "cross": false,
+        "cohort": true
+      },
+      "expected_boundary": "仅使用已授权患者和项目本地知识；缺资料或范围不清时澄清，不猜测患者；报告重算仍按资料版本确认",
+      "status": "not_run"
+    },
+    {
+      "id": "Q41",
+      "category": "统计",
+      "split": "acceptance",
+      "question": "不要统计所有患者，只读取当前患者",
+      "selected_patient": "synthetic-primary",
+      "comparison_patients": [],
+      "expected_signals": {
+        "report": false,
+        "cross": false,
+        "cohort": false
+      },
+      "expected_boundary": "仅使用已授权患者和项目本地知识；缺资料或范围不清时澄清，不猜测患者；报告重算仍按资料版本确认",
+      "status": "not_run"
+    },
+    {
+      "id": "Q42",
+      "category": "统计",
+      "split": "acceptance",
+      "question": "无需统计群体人数，解释这个患者的量表",
+      "selected_patient": "synthetic-primary",
+      "comparison_patients": [],
+      "expected_signals": {
+        "report": false,
+        "cross": false,
+        "cohort": false
+      },
+      "expected_boundary": "仅使用已授权患者和项目本地知识；缺资料或范围不清时澄清，不猜测患者；报告重算仍按资料版本确认",
+      "status": "not_run"
+    },
+    {
+      "id": "Q43",
+      "category": "混合",
+      "split": "development",
+      "question": "解释患者的 MoCA，并生成完整分析报告",
+      "selected_patient": "synthetic-primary",
+      "comparison_patients": [],
+      "expected_signals": {
+        "report": true,
+        "cross": false,
+        "cohort": false
+      },
+      "expected_boundary": "仅使用已授权患者和项目本地知识；缺资料或范围不清时澄清，不猜测患者；报告重算仍按资料版本确认",
+      "status": "not_run"
+    },
+    {
+      "id": "Q44",
+      "category": "混合",
+      "split": "development",
+      "question": "比较两位患者，同时统计所有患者的 MoCA 均值",
+      "selected_patient": "synthetic-primary",
+      "comparison_patients": [
+        "synthetic-other"
+      ],
+      "expected_signals": {
+        "report": false,
+        "cross": true,
+        "cohort": true
+      },
+      "expected_boundary": "仅使用已授权患者和项目本地知识；缺资料或范围不清时澄清，不猜测患者；报告重算仍按资料版本确认",
+      "status": "not_run"
+    },
+    {
+      "id": "Q45",
+      "category": "混合",
+      "split": "development",
+      "question": "分析患者病史，比较两位患者，并生成完整报告",
+      "selected_patient": "synthetic-primary",
+      "comparison_patients": [
+        "synthetic-other"
+      ],
+      "expected_signals": {
+        "report": true,
+        "cross": true,
+        "cohort": false
+      },
+      "expected_boundary": "仅使用已授权患者和项目本地知识；缺资料或范围不清时澄清，不猜测患者；报告重算仍按资料版本确认",
+      "status": "not_run"
+    },
+    {
+      "id": "Q46",
+      "category": "混合",
+      "split": "development",
+      "question": "统计队列人数，并生成病例报告",
+      "selected_patient": "synthetic-primary",
+      "comparison_patients": [],
+      "expected_signals": {
+        "report": true,
+        "cross": false,
+        "cohort": true
+      },
+      "expected_boundary": "仅使用已授权患者和项目本地知识；缺资料或范围不清时澄清，不猜测患者；报告重算仍按资料版本确认",
+      "status": "not_run"
+    },
+    {
+      "id": "Q47",
+      "category": "混合",
+      "split": "acceptance",
+      "question": "分析这个患者的 MoCA，不要比较其他患者",
+      "selected_patient": "synthetic-primary",
+      "comparison_patients": [],
+      "expected_signals": {
+        "report": false,
+        "cross": false,
+        "cohort": false
+      },
+      "expected_boundary": "仅使用已授权患者和项目本地知识；缺资料或范围不清时澄清，不猜测患者；报告重算仍按资料版本确认",
+      "status": "not_run"
+    },
+    {
+      "id": "Q48",
+      "category": "混合",
+      "split": "acceptance",
+      "question": "不要统计群体，只比较两位患者",
+      "selected_patient": "synthetic-primary",
+      "comparison_patients": [
+        "synthetic-other"
+      ],
+      "expected_signals": {
+        "report": false,
+        "cross": true,
+        "cohort": false
+      },
+      "expected_boundary": "仅使用已授权患者和项目本地知识；缺资料或范围不清时澄清，不猜测患者；报告重算仍按资料版本确认",
+      "status": "not_run"
+    }
+  ]
+}

@@ -2,10 +2,13 @@
 from datetime import datetime, timezone
 
 from neurogra_kg.api import KnowledgeGraphService
-from neurogra_kg.config import load_config
 from neurogra_kg.catalogs import FIELDS
-from neurogra_kg.terminology import canonical_field, canonical_value, canonical_method
-from neurogra_kg.contracts.domain import PatientFact, SourceRef, RetrievalRequest as KGRequest
+from neurogra_kg.config import load_config
+from neurogra_kg.contracts.domain import PatientFact, SourceRef
+from neurogra_kg.contracts.domain import RetrievalRequest as KGRequest
+from neurogra_kg.terminology import canonical_field, canonical_method, canonical_value
+
+from .generation import patient_endpoint_allowed
 from .schemas import EvidenceItem
 from .utils import identity
 
@@ -104,6 +107,13 @@ def retrieve_backend(config, release_id, request, backend, remaining, snapshot=N
         return retrieve_triples(config, release_id, request.question, backend, request.top_k)
     if backend == "vector" and not config.vector_enabled:
         return "not_configured", [], {}
+    cfg = settings(config)
+    if backend == 'vector' and not patient_endpoint_allowed(
+            config.project_root, cfg.embedding.base_url, cfg.embedding.model):
+        return 'blocked_patient_data_outbound', [], {}
+    if backend == 'graph' and cfg.graph.provider != 'memory' and not patient_endpoint_allowed(
+            config.project_root, cfg.graph.uri):
+        return 'blocked_patient_data_outbound', [], {}
     facts, omitted = patient_facts(snapshot, request.patient_fact_refs)
     reference = request.reference_time
     # The SDK requires a time. Without a supplied patient analysis time no patient

@@ -5,6 +5,7 @@ from pathlib import Path
 
 from neurogra.clinical.utils import fingerprint, sha256_file
 
+from .activity import assert_chat_quiescent, maintenance
 from .locking import exclusive
 
 
@@ -84,7 +85,8 @@ class Lifecycle:
             raise ValueError('cleanup_plan_invalid')
         if not isinstance(plan.get('created'), (int, float)) or not 0 <= time.time() - plan['created'] <= 86400:
             raise ValueError('cleanup_plan_expired')
-        with exclusive(self.app.root, 'model_resource'), self.app.store.connect() as db:
+        with maintenance(self.app.root), exclusive(self.app.root, 'model_resource'), self.app.store.connect() as db:
+            assert_chat_quiescent(self.app.root)
             db.execute('BEGIN IMMEDIATE')
             if db.execute("SELECT 1 FROM jobs WHERE status IN ('queued','running') LIMIT 1").fetchone():
                 raise ValueError('请在排队和运行任务结束后执行清理。')

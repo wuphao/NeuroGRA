@@ -3,6 +3,8 @@
 import math
 from pathlib import Path
 
+from neurogra_common.model_admission import admit_model
+
 from ..config import EmbeddingConfig
 from ..runtime import MODEL_LOCK
 from ..utils import atomic_json, identity
@@ -37,16 +39,17 @@ class OllamaEmbeddingAdapter:
                 import json
                 vectors = json.loads(path.read_text(encoding="utf-8"))["vectors"]
             else:
-                if budget:
-                    budget.reserve("embedding")
-                with MODEL_LOCK:
-                    timeout = min(self.config.timeout_seconds, budget.remaining()) if budget else self.config.timeout_seconds
-                    response = self.transport(self.config.base_url.rstrip("/") + "/api/embed",
-                        {"model": self.config.model, "input": batch, "truncate": False,
-                         "keep_alive": self.config.keep_alive}, timeout)
-                    vectors = response.get("embeddings", [])
-                    if self.model_digest(min(10, budget.remaining()) if budget else 10) != digest:
-                        raise ValueError("embedding_model_changed_during_call")
+                with admit_model(('knowledge', self.config.base_url, self.config.model, 'embedding')):
+                    if budget:
+                        budget.reserve("embedding")
+                    with MODEL_LOCK:
+                        timeout = min(self.config.timeout_seconds, budget.remaining()) if budget else self.config.timeout_seconds
+                        response = self.transport(self.config.base_url.rstrip("/") + "/api/embed",
+                            {"model": self.config.model, "input": batch, "truncate": False,
+                             "keep_alive": self.config.keep_alive}, timeout)
+                        vectors = response.get("embeddings", [])
+                        if self.model_digest(min(10, budget.remaining()) if budget else 10) != digest:
+                            raise ValueError("embedding_model_changed_during_call")
             if len(vectors) != len(batch):
                 raise ValueError("embedding_row_count_mismatch")
             normalized = [self._normalize(vector) for vector in vectors]

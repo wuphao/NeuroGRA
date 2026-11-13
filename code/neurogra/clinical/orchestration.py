@@ -18,7 +18,7 @@ class TaskProposal(Contract):
 
 
 class PlanProposal(Contract):
-    tasks: list[TaskProposal]
+    tasks: list[TaskProposal] = Field(max_length=32)
 
 
 class ActionProposal(Contract):
@@ -38,8 +38,8 @@ class ActionProposal(Contract):
 
 
 class IterationDecision(Contract):
-    actions: list[ActionProposal] = Field(default_factory=list, max_length=8)
-    tasks: list[TaskProposal] = Field(default_factory=list, max_length=4)
+    actions: list[ActionProposal] = Field(default_factory=list, max_length=32)
+    tasks: list[TaskProposal] = Field(default_factory=list, max_length=32)
     stop: bool = False
     stop_reason: str = ""
     unresolved: list[str] = Field(default_factory=list, max_length=20)
@@ -62,12 +62,12 @@ actions引用pending_requests提供的request_ref，或给出新的request内容
 知识缺口可用knowledge请求，只有需要从原文抽取验证新条件时允许allow_supplement。
 已经失败、无新内容或重复的请求不要再次执行；预算不足或资料不可获得时保留不确定性。
 返回actions、tasks、stop、stop_reason、unresolved。停止时不返回动作或任务，不按专科人数投票。
-tasks每个角色至多一个；questions为具体问题，input_refs仅引用该角色现有患者资料。
+tasks可为同一角色列出多个不同子问题；questions为具体问题，input_refs仅引用该角色现有患者资料。
 """
 
 
 PLANNER_PROMPT = """你是NeuroGRA主Agent，只规划子Agent任务，不诊断。
-只为eligible_roles中列出的角色建立任务，根据当前问题选择需要的角色，每个角色至多一个任务，不要建立其他角色。
+只为eligible_roles中列出的角色建立任务，根据当前问题选择需要的角色；同一角色可承担不同子问题，不要建立其他角色。
 input_refs从给出的observation_ids选择；影像角色也可选image asset_id，不能创造ID。
 每项至少一个输入、一个具体问题，why说明资料依据。不要把未知检查当已存在。
 根据患者实际资料制定该角色要回答的问题，不输出临床判断。
@@ -81,13 +81,14 @@ def eligible_roles(snapshot):
 
 
 def validate_plan(plan: TaskPlan, snapshot: CaseSnapshot, require_all_roles=False) -> list[str]:
-    errors, seen = [], set()
+    errors, seen, task_ids, imaging_refs = [], set(), set(), set()
     observations = {o.observation_id: o for o in snapshot.observations}
     images = {i.asset_id for i in snapshot.images}
     expected = set(eligible_roles(snapshot))
     for task in plan.tasks:
-        if task.agent_type in seen:
-            errors.append("duplicate_role")
+        if task.task_id in task_ids:
+            errors.append("duplicate_task_id")
+        task_ids.add(task.task_id)
         seen.add(task.agent_type)
         if task.agent_type not in expected:
             errors.append("role_without_data")
@@ -103,12 +104,14 @@ def validate_plan(plan: TaskPlan, snapshot: CaseSnapshot, require_all_roles=Fals
         for ref in task.background_refs:
             if ref not in observations or "background" not in observations[ref].domains:
                 errors.append("invalid_background_ref")
-        if task.agent_type == 'imaging' and not images <= set(task.input_refs):
-            errors.append('unassigned_image_assets')
+        if task.agent_type == 'imaging':
+            imaging_refs.update(task.input_refs)
         if task.permitted_tools:
             errors.append("specialist_external_tools_forbidden")
         if task.budget.max_llm_calls > 64 or task.budget.max_retrieval_calls > 2 or task.budget.timeout_seconds > 3600:
             errors.append("task_budget_exceeded")
+    if 'imaging' in seen and not images <= imaging_refs:
+        errors.append('unassigned_image_assets')
     if require_all_roles and seen != expected:
         errors.append("missing_eligible_role")
     return sorted(set(errors))
@@ -165,12 +168,13 @@ class MainAgent:
                 try:
                     proposal = self.gateway.generate_structured(PLANNER_PROMPT, data, PlanProposal)
                     plan = TaskPlan(tasks=[AgentTask(
-                        task_id=identity("task", [snapshot.case_id, item.agent_type, snapshot.version]),
+                        task_id=identity("task", [snapshot.case_id, item.agent_type, snapshot.version,
+                                                  index, item.input_refs, item.questions]),
                         agent_type=item.agent_type, case_version=snapshot.version,
                         input_refs=([o.observation_id for o in snapshot.observations if item.agent_type in o.domains]
                                     if grouped and item.input_refs == [item.agent_type] else item.input_refs), background_refs=background,
                         questions=item.questions, why=item.why,
-                        permitted_tools=[]) for item in proposal.tasks])
+                        permitted_tools=[]) for index, item in enumerate(proposal.tasks)])
                     if self.task_budget:
                         for task in plan.tasks:
                             task.budget = self.task_budget.model_copy(deep=True)
@@ -181,7 +185,6 @@ class MainAgent:
                     if not errors:
                         plan.mode = "model"
                         for task in plan.tasks:
-                            task.task_id = identity("task", [snapshot.case_id, task.agent_type, snapshot.version])
                             if task.agent_type == 'imaging':
                                 task.permitted_tools = []
                         plan.skipped = {r: "未提供可用相关资料" for r in ROLES if r not in eligible_roles(snapshot)}
@@ -312,22 +315,27 @@ def scoped_snapshot(snapshot, task):
     observations = [o for o in snapshot.observations if o.observation_id in refs]
     images = [i for i in snapshot.images if i.asset_id in task.input_refs]
     source_refs = {r for o in observations for r in o.source_refs} | {r for i in images for r in i.source_refs}
+    visible = {o.observation_id for o in observations}
+    conflicts = [[ref for ref in group if ref in visible] for group in snapshot.conflict_groups]
     return snapshot.model_copy(deep=True, update={
         "observations": [o.model_copy(deep=True) for o in observations],
         "images": [i.model_copy(deep=True) for i in images],
         "records": [r.model_copy(deep=True) for r in snapshot.records if r.record_id in source_refs],
-        "inventory": [], "processing": {}, "timeline": [], "conflict_groups": [], "issues": [],
+        "inventory": [], "processing": {}, "timeline": [ref for ref in snapshot.timeline if ref in visible],
+        "conflict_groups": [group for group in conflicts if len(group) > 1], "issues": [],
         "patient_metadata": {}})
 
 
 class Executor:
     """Dispatch only the explicit tasks and scoped materials supplied by main."""
-    def __init__(self, store, run_id, max_parallel=4, model_config=None, reserved_calls=6, agent_configs=None):
+    def __init__(self, store, run_id, max_parallel=4, model_config=None, reserved_calls=6, agent_configs=None,
+                 fatal_exceptions=()):
         self.store, self.run_id = store, run_id
         self.handlers = {}
         self.model_config = model_config
         self.reserved_calls = reserved_calls
         self.agent_configs = agent_configs or {}
+        self.fatal_exceptions = fatal_exceptions
         self.semaphore = asyncio.Semaphore(max_parallel)
 
     def register(self, role, handler: AgentHandler):
@@ -393,6 +401,8 @@ class Executor:
                     image_data = supplied.get("image_result") or {}
                     image_ids = {image_data["result_id"]} if image_data.get("status") == "completed" else set()
                     validate_references(result.model_results, image_ids)
+                except self.fatal_exceptions:
+                    raise
                 except Exception as exc:
                     result = AgentResult(result_id=identity("result", task.task_id), task_id=task.task_id,
                                          case_version=snapshot.version, status="failed",

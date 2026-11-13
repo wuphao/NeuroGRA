@@ -7,7 +7,7 @@ from pathlib import Path
 
 from neurogra.clinical.utils import dumps
 
-SCHEMA_VERSION = 3
+SCHEMA_VERSION = 6
 TERMINAL = {'succeeded', 'failed', 'cancelled', 'interrupted'}
 
 
@@ -51,10 +51,22 @@ class PlatformStore:
                 backup = self.path.with_name(f'pre-migration-v{version}-{uuid.uuid4().hex}.sqlite')
                 with closing(sqlite3.connect(backup)) as target:
                     db.backup(target)
+            # Rebuilding cases removes the old global patient-number uniqueness.
+            # Disable FK enforcement only for this transaction and verify it before commit.
+            db.execute('PRAGMA foreign_keys=OFF')
             db.execute('BEGIN IMMEDIATE')
             try:
+                old_cases = db.execute("SELECT sql FROM sqlite_master WHERE type='table' AND name='cases'").fetchone()
+                if old_cases is not None and version < 4:
+                    db.execute('CREATE TABLE cases_v4(case_id TEXT PRIMARY KEY, patient_number TEXT NOT NULL, created REAL NOT NULL)')
+                    db.execute('INSERT INTO cases_v4 SELECT case_id,patient_number,created FROM cases')
+                    db.execute('DROP TABLE cases')
+                    db.execute('ALTER TABLE cases_v4 RENAME TO cases')
                 for statement in [
-                    'CREATE TABLE IF NOT EXISTS cases(case_id TEXT PRIMARY KEY, patient_number TEXT NOT NULL UNIQUE, created REAL NOT NULL)',
+                    'CREATE TABLE IF NOT EXISTS cases(case_id TEXT PRIMARY KEY, patient_number TEXT NOT NULL, created REAL NOT NULL)',
+                    '''CREATE TABLE IF NOT EXISTS patient_scope(source_id TEXT NOT NULL, project_id TEXT NOT NULL,
+                        patient_key TEXT NOT NULL, case_id TEXT NOT NULL UNIQUE REFERENCES cases(case_id),
+                        PRIMARY KEY(source_id,project_id,patient_key))''',
                     '''CREATE TABLE IF NOT EXISTS case_versions(version_id TEXT PRIMARY KEY,
                         case_id TEXT NOT NULL REFERENCES cases(case_id), checksum TEXT NOT NULL,
                         path TEXT NOT NULL, source TEXT NOT NULL, issues TEXT NOT NULL, created REAL NOT NULL,
@@ -63,6 +75,13 @@ class PlatformStore:
                         version_id TEXT REFERENCES case_versions(version_id), config TEXT NOT NULL,
                         payload TEXT NOT NULL, fingerprint TEXT NOT NULL, status TEXT NOT NULL,
                         created REAL NOT NULL, updated REAL NOT NULL)''',
+                    '''CREATE TABLE IF NOT EXISTS analysis_dispatch(request_key TEXT PRIMARY KEY,
+                        job_id TEXT NOT NULL REFERENCES jobs(job_id), version_id TEXT NOT NULL,
+                        created REAL NOT NULL)''',
+                    '''CREATE TABLE IF NOT EXISTS model_wait_ticket(ticket_id TEXT PRIMARY KEY,
+                        owner_type TEXT NOT NULL, work_key TEXT NOT NULL UNIQUE, state TEXT NOT NULL,
+                        created REAL NOT NULL, deadline REAL NOT NULL, owner TEXT, lease_until REAL)''',
+                    'CREATE INDEX IF NOT EXISTS model_wait_order ON model_wait_ticket(state,created,ticket_id)',
                     '''CREATE TABLE IF NOT EXISTS attempts(attempt_id TEXT PRIMARY KEY,
                         job_id TEXT NOT NULL REFERENCES jobs(job_id), ordinal INTEGER NOT NULL,
                         mode TEXT NOT NULL, resume_run_id TEXT, status TEXT NOT NULL,
@@ -95,11 +114,15 @@ class PlatformStore:
                 columns = {row[1] for row in db.execute('PRAGMA table_info(batches)')}
                 if 'plan' not in columns:
                     db.execute("ALTER TABLE batches ADD COLUMN plan TEXT NOT NULL DEFAULT '[]'")
+                if db.execute('PRAGMA foreign_key_check').fetchone() is not None:
+                    raise RuntimeError('platform_migration_foreign_key_violation')
                 db.execute(f'PRAGMA user_version={SCHEMA_VERSION}')
                 db.execute('COMMIT')
             except BaseException:
                 db.execute('ROLLBACK')
                 raise
+            finally:
+                db.execute('PRAGMA foreign_keys=ON')
 
     def cases(self):
         with self.connect() as db:
@@ -118,12 +141,21 @@ class PlatformStore:
             raise KeyError('case_version_not_found')
         return dict(row)
 
-    def create_job(self, kind, version_id, config, payload, fingerprint, *, batch_id=None):
+    def create_job(self, kind, version_id, config, payload, fingerprint, *, batch_id=None, request_key=None):
         now = time.time()
         with self.connect() as db:
             db.execute('BEGIN IMMEDIATE')
+            if request_key:
+                dispatched = db.execute('SELECT job_id,version_id FROM analysis_dispatch WHERE request_key=?', (request_key,)).fetchone()
+                if dispatched:
+                    if dispatched['version_id'] != version_id:
+                        raise ValueError('analysis_request_input_changed')
+                    db.execute('COMMIT')
+                    return self.job(dispatched['job_id'])
             existing = db.execute("SELECT job_id FROM jobs WHERE fingerprint=? AND status IN ('queued','running')", (fingerprint,)).fetchone()
             if existing:
+                if request_key:
+                    db.execute('INSERT INTO analysis_dispatch VALUES(?,?,?,?)', (request_key, existing[0], version_id, now))
                 if batch_id:
                     db.execute('INSERT OR IGNORE INTO batch_jobs VALUES(?,?)', (batch_id, existing[0]))
                 db.execute('COMMIT')
@@ -133,6 +165,8 @@ class PlatformStore:
                 (job_id, kind, version_id, dumps(config), dumps(payload), fingerprint, 'queued', now, now))
             db.execute('INSERT INTO attempts(attempt_id,job_id,ordinal,mode,status) VALUES(?,?,1,?,?)',
                        (attempt_id, job_id, 'new', 'queued'))
+            if request_key:
+                db.execute('INSERT INTO analysis_dispatch VALUES(?,?,?,?)', (request_key, job_id, version_id, now))
             if batch_id:
                 db.execute('INSERT INTO batch_jobs VALUES(?,?)', (batch_id, job_id))
             db.execute('COMMIT')
@@ -146,6 +180,11 @@ class PlatformStore:
             value = dict(row)
             value['attempts'] = [dict(r) for r in db.execute('SELECT * FROM attempts WHERE job_id=? ORDER BY ordinal', (job_id,))]
         return value
+
+    def dispatched_job(self, request_key):
+        with self.connect() as db:
+            row = db.execute('SELECT job_id FROM analysis_dispatch WHERE request_key=?', (request_key,)).fetchone()
+        return row['job_id'] if row else None
 
     def jobs(self):
         with self.connect() as db:
@@ -175,33 +214,47 @@ class PlatformStore:
         return dict(row)
 
     def heartbeat(self, attempt_id, worker, lease_seconds=60):
+        now = time.time()
         with self.connect() as db:
-            updated = db.execute("UPDATE attempts SET lease_until=? WHERE attempt_id=? AND worker=? AND status='running'",
-                (time.time() + lease_seconds, attempt_id, worker)).rowcount
+            updated = db.execute("""UPDATE attempts SET lease_until=? WHERE attempt_id=? AND worker=?
+                AND status='running' AND lease_until>?""", (now + lease_seconds, attempt_id, worker, now)).rowcount
         if not updated:
             raise RuntimeError('worker_ownership_lost')
 
     def bind_run(self, attempt_id, worker, run_id):
         with self.connect() as db:
-            if not db.execute("UPDATE attempts SET run_id=? WHERE attempt_id=? AND worker=? AND status='running'",
-                              (run_id, attempt_id, worker)).rowcount:
+            if not db.execute("""UPDATE attempts SET run_id=? WHERE attempt_id=? AND worker=?
+                AND status='running' AND lease_until>?""", (run_id, attempt_id, worker, time.time())).rowcount:
                 raise RuntimeError('worker_ownership_lost')
 
-    def event(self, attempt_id, kind, payload):
+    def event(self, attempt_id, kind, payload, *, worker=None):
         with self.connect() as db:
+            if worker is not None:
+                db.execute('BEGIN IMMEDIATE')
+                if db.execute("""SELECT 1 FROM attempts WHERE attempt_id=? AND worker=?
+                    AND status='running' AND lease_until>?""", (attempt_id, worker, time.time())).fetchone() is None:
+                    db.execute('ROLLBACK')
+                    raise RuntimeError('worker_ownership_lost')
             db.execute('INSERT INTO job_events(attempt_id,kind,payload,created) VALUES(?,?,?,?)',
                        (attempt_id, kind, dumps(payload), time.time()))
+            if worker is not None:
+                db.execute('COMMIT')
 
     def events(self, attempt_id):
         with self.connect() as db:
             return [dict(r) for r in db.execute('SELECT * FROM job_events WHERE attempt_id=? ORDER BY seq DESC LIMIT 100', (attempt_id,))]
 
-    def finish(self, attempt_id, worker, status, *, result=None, error=None):
+    def finish(self, attempt_id, worker, status, *, result=None, error=None, model_fence=None):
         if status not in TERMINAL:
             raise ValueError('invalid_terminal_status')
         with self.connect() as db:
             db.execute('BEGIN IMMEDIATE')
-            row = db.execute("SELECT * FROM attempts WHERE attempt_id=? AND worker=? AND status='running'", (attempt_id, worker)).fetchone()
+            if model_fence is not None and db.execute('''SELECT 1 FROM model_wait_ticket
+                    WHERE ticket_id=? AND owner=? AND state='claimed' AND lease_until>?''',
+                    (model_fence.ticket_id, model_fence.owner, time.time())).fetchone() is None:
+                raise RuntimeError('model_queue_ownership_lost')
+            row = db.execute("""SELECT * FROM attempts WHERE attempt_id=? AND worker=?
+                AND status='running' AND lease_until>?""", (attempt_id, worker, time.time())).fetchone()
             if row is None:
                 raise RuntimeError('worker_ownership_lost')
             if row['cancel_requested']:

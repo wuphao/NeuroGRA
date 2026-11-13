@@ -12,9 +12,15 @@ def execution_binding():
              'batching.py', 'context.py', 'context_models.py', 'context_budget.py',
              'context_views.py', 'agent_state.py', 'narrative.py', 'profiling.py',
              'reporting.py', 'report_template.md', 'diagnostic_synthesis.py',
-             'diagnostic_outcomes.py', 'label_masking.py', 'triple_knowledge.py', 'diagnosis_validation.py')
+             'diagnostic_outcomes.py', 'label_masking.py', 'triple_knowledge.py', 'diagnosis_validation.py',
+             'retrieval.py', 'retrieval_worker.py', 'report_collaboration.py', 'collaboration_store.py',
+             'collaboration_contracts.py', 'capability_registry.py')
+    code_root = root.parent.parent
+    shared = ('neurogra_common/model_admission.py', 'neurogra_common/activity.py', 'neurogra_common/locking.py',
+              'neurogra_kg/adapters/ollama_llm.py', 'neurogra_kg/adapters/ollama_embedding.py')
     return {'contract': 'main_owned_v2',
-            'implementation': fingerprint({name: sha256_file(root / name) for name in names})}
+            'implementation': fingerprint({name: sha256_file(root / name) for name in names}),
+            'shared_implementation': fingerprint({name: sha256_file(code_root / name) for name in shared})}
 
 
 def verify_execution_binding(store, run_id):

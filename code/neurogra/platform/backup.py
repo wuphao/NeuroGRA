@@ -12,7 +12,9 @@ from urllib.parse import urlsplit
 from neurogra.clinical.config import ClinicalConfig
 from neurogra.clinical.utils import dumps, fingerprint, sha256_file, write_json
 
+from .activity import assert_chat_quiescent, maintenance
 from .locking import exclusive
+from .restoration import restoration_roots
 
 
 def safe_relative(value):
@@ -60,6 +62,25 @@ def relocate_config(raw, old, new):
     for key in ('index_root', 'index_manifest'):
         config['vector'][key] = relocated(config['vector'][key], old, new)
     return config
+
+
+def relocate_run_config(raw, old, new):
+    """Relocate known lightweight chat bindings without inventing a clinical config.
+
+    Their digests remain bound to the original execution; an unfinished dialogue
+    must fail its normal resume check after relocation rather than be re-signed.
+    """
+    if not isinstance(raw, dict):
+        raise ValueError('backup_run_config_invalid')
+    dialogue = (raw.get('purpose') in {'patient_dialogue', 'mixed_dialogue'} and
+                set(raw) <= {'project_root', 'purpose', 'binding', 'config_digest', 'execution_digest', 'plan_digest',
+                             'budget_parent_run_id', 'budget_child_run_id'})
+    followup = isinstance(raw.get('followup'), dict) and set(raw) <= {'project_root', 'followup'}
+    if dialogue or followup:
+        if not isinstance(raw.get('project_root'), str) or Path(raw['project_root']).resolve() != old:
+            raise ValueError('backup_run_root_mismatch')
+        return {**raw, 'project_root': str(new)}
+    return relocate_config(raw, old, new)
 
 
 def embedded_config(config):
@@ -112,6 +133,8 @@ class Backups:
         # All platform writers that can change referenced files are fenced, while
         # BEGIN IMMEDIATE blocks queue claims and metadata writes during the copy.
         with ExitStack() as stack:
+            stack.enter_context(maintenance(self.app.root))
+            assert_chat_quiescent(self.app.root)
             for name in ('backup', 'model_resource', 'document-registration', 'knowledge-activation', 'settings-update'):
                 stack.enter_context(exclusive(self.app.root, name))
             db = stack.enter_context(self.app.store.connect())
@@ -329,7 +352,13 @@ def restore(directory, destination):
                 else f'data/platform/restored-rwe/{fingerprint(schema)}.json')
             write_json(stage / rebased['rwe_config'], schema)
             rebased = ClinicalConfig.model_validate(rebased).model_dump(mode='json')
-            binding = [kind, version_id, rebased] if kind == 'analysis' else [kind, json.loads(payload), rebased]
+            payload_value = json.loads(payload)
+            if kind == 'analysis':
+                binding = [kind, version_id, rebased]
+                if payload_value.get('patient_workspace'):
+                    binding.append(payload_value)
+            else:
+                binding = [kind, payload_value, rebased]
             db.execute('UPDATE jobs SET config=?,fingerprint=? WHERE job_id=?', (dumps(rebased), fingerprint(binding), job_id))
         for batch_id, raw in db.execute('SELECT batch_id,plan FROM batches').fetchall():
             plan = json.loads(raw)
@@ -355,7 +384,8 @@ def restore(directory, destination):
     config['rwe_config'] = 'data/platform/rwe-restored.json'
     write_json(stage / config['rwe_config'], manifest['rwe_configuration'])
     write_json(stage / 'data/platform/settings.json', config)
-    write_json(stage / 'data/platform/restoration.json', {'source_root': str(old),
+    legacy_roots = list(dict.fromkeys([str(old), *restoration_roots(stage)]))
+    write_json(stage / 'data/platform/restoration.json', {'source_root': str(old), 'legacy_roots': legacy_roots,
         'restored': time.time(), 'known_unavailable_artifacts': manifest['known_unavailable_artifacts'],
         'services_verified': False, 'credentials_restored': False})
     stage.rename(destination)
@@ -376,7 +406,8 @@ def _relocate_engine(path, old, new):
             return
         db.execute('BEGIN IMMEDIATE')
         for run_id, raw in db.execute('SELECT run_id,config FROM runs').fetchall():
-            db.execute('UPDATE runs SET config=? WHERE run_id=?', (dumps(relocate_config(json.loads(raw), old, new)), run_id))
+            db.execute('UPDATE runs SET config=? WHERE run_id=?',
+                       (dumps(relocate_run_config(json.loads(raw), old, new)), run_id))
         for rowid, raw in db.execute("SELECT rowid,payload FROM objects WHERE kind='run_result'").fetchall():
             result = json.loads(raw)
             _relocate_report_paths(result, old, new)

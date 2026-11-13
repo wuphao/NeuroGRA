@@ -18,6 +18,7 @@ def main(argv=None):
     commands.add_parser('integrity', help='只读检查历史报告产物')
     commands.add_parser('jobs', help='查看平台任务')
     commands.add_parser('storage', help='只读统计受管理数据空间')
+    commands.add_parser('migrate-chat', help='只读导入旧 NeuroGRA 聊天记录到本地 SQLite')
     cleanup = commands.add_parser('cleanup', help='预览过期轮转日志，或执行已保存预览')
     cleanup.add_argument('--retention-days', type=int, default=30)
     cleanup.add_argument('--save-plan', type=Path)
@@ -44,6 +45,10 @@ def main(argv=None):
     from .configuration import configuration_for_profile
     from .settings import load_settings
     root = resolve_config(root=args.root).project_root
+    if args.command == 'migrate-chat':
+        from .chat_migration import migrate_chat
+        print(json.dumps(migrate_chat(root), ensure_ascii=False))
+        return 0
     config = resolve_config(args.config, root=root) if args.config else load_settings(root)
     if args.profile:
         config = configuration_for_profile(config, args.profile)
@@ -52,8 +57,10 @@ def main(argv=None):
         start(config, args.port)
         return 0
     if args.command == 'stop-worker':
+        from .activity import active
         from .store import PlatformStore
-        PlatformStore(root).stop_workers()
+        with active(root):
+            PlatformStore(root).stop_workers()
         print('后台进程将在当前任务结束后退出。')
         return 0
     if args.command == 'serve':

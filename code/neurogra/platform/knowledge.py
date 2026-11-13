@@ -11,6 +11,7 @@ from neurogra_kg.utils import atomic_json
 from neurogra.clinical.llm import http_json
 from neurogra.clinical.utils import fingerprint, sha256_file
 
+from .activity import tracked
 from .locking import exclusive
 
 
@@ -57,6 +58,7 @@ class KnowledgeManager:
     def __init__(self, app):
         self.app = app
 
+    @tracked(lambda self: self.app.root)
     def upload(self, name, content):
         name = Path(str(name)).name
         suffix = Path(name).suffix.lower()
@@ -117,6 +119,7 @@ class KnowledgeManager:
                 selected.append(DocumentInput(path=path, title=row['name']))
         return selected
 
+    @tracked(lambda self: self.app.root)
     def submit(self, ids, *, kb=True, kg=False, vector=True, preview=False):
         self.inputs(ids)
         if not preview and not kb and not kg:
@@ -166,6 +169,7 @@ class KnowledgeManager:
             pass
         return result
 
+    @tracked(lambda self: self.app.root)
     def activate(self, module, release_id):
         with exclusive(self.app.root, 'knowledge-activation'):
             if module == 'kb':

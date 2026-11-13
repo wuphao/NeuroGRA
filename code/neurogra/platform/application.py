@@ -13,6 +13,7 @@ from neurogra.clinical.intake import ingest_patient
 from neurogra.clinical.schemas import PatientInput
 from neurogra.clinical.utils import dumps, fingerprint, sha256_file, write_json
 
+from .activity import active, tracked
 from .configuration import configuration_for_profile, public_config
 from .preflight import inspect_environment
 from .store import PlatformStore
@@ -21,10 +22,12 @@ from .store import PlatformStore
 class Application:
     def __init__(self, root, config=None):
         self.root = Path(root).resolve()
-        from .settings import load_settings
-        self.config = config or load_settings(self.root)
-        self.store = PlatformStore(self.root)
+        with active(self.root):
+            from .settings import load_settings
+            self.config = config or load_settings(self.root)
+            self.store = PlatformStore(self.root)
 
+    @tracked(lambda self: self.root)
     def import_case(self, raw, *, source='json'):
         serialized = dumps(raw)
         if len(serialized.encode('utf-8')) > 50_000_000:
@@ -32,7 +35,13 @@ class Application:
         patient = PatientInput.model_validate(raw)
         intake = ingest_patient(raw, self.config)
         checksum = hashlib.sha256(serialized.encode('utf-8')).hexdigest()
-        case_id = stable_id('case', patient.patient_id.strip())
+        scope = None
+        if isinstance(source, dict) and source.get('kind') == 'rwe_workspace':
+            scope = (source.get('source_id'), str(source.get('project_id') or ''),
+                     str(source.get('patient_id') or ''))
+            if not all(isinstance(value, str) and value for value in scope):
+                raise ValueError('patient_source_scope_missing')
+        case_id = stable_id('case', ['rwe_workspace', *scope] if scope else patient.patient_id.strip())
         version_id = stable_id('input', [case_id, checksum])
         path = self.root / 'data/platform/cases' / case_id / (version_id + '.json')
         path = self.inside(path)
@@ -44,6 +53,11 @@ class Application:
         with self.store.connect() as db:
             db.execute('BEGIN IMMEDIATE')
             db.execute('INSERT OR IGNORE INTO cases VALUES(?,?,?)', (case_id, patient.patient_id.strip(), time.time()))
+            if scope:
+                db.execute('INSERT OR IGNORE INTO patient_scope VALUES(?,?,?,?)', (*scope, case_id))
+                scoped = db.execute('SELECT case_id FROM patient_scope WHERE source_id=? AND project_id=? AND patient_key=?', scope).fetchone()
+                if scoped is None or scoped['case_id'] != case_id:
+                    raise ValueError('patient_source_scope_conflict')
             db.execute('INSERT OR IGNORE INTO case_versions VALUES(?,?,?,?,?,?,?)',
                 (version_id, case_id, checksum, path.relative_to(self.root).as_posix(),
                  dumps(source), dumps([i.model_dump(mode='json') for i in intake.issues]), time.time()))
@@ -78,7 +92,8 @@ class Application:
             'record_count': len(intake.records),
             'preview': [r.model_dump(mode='json') for r in intake.records[:80]]}
 
-    def submit(self, version_id, config=None, *, batch_id=None):
+    @tracked(lambda self: self.root)
+    def submit(self, version_id, config=None, *, batch_id=None, context=None, request_key=None):
         config = config or self.config
         if config.project_root.resolve() != self.root:
             raise ValueError('job_root_mismatch')
@@ -95,10 +110,13 @@ class Application:
             updates['knowledge_release_id'] = next(c['details']['release_id'] for c in readiness['checks'] if c['name'] == 'kg_release')
         config = config.model_copy(update=updates)
         effective = config.model_dump(mode='json')
-        job = self.store.create_job('analysis', version_id, effective, {},
-                                    fingerprint(['analysis', version_id, effective]), batch_id=batch_id)
+        payload = {'patient_workspace': context} if context else {}
+        job = self.store.create_job('analysis', version_id, effective, payload,
+                                    fingerprint(['analysis', version_id, effective, payload]) if context else
+                                    fingerprint(['analysis', version_id, effective]), batch_id=batch_id, request_key=request_key)
         return self.job(job['job_id'])
 
+    @tracked(lambda self: self.root)
     def submit_batch(self, version_ids, config=None, name='病例批量分析'):
         if not isinstance(version_ids, list) or not 1 <= len(version_ids) <= 200 or len(set(version_ids)) != len(version_ids):
             raise ValueError('请选择 1 至 200 个不重复的病例版本。')
@@ -154,6 +172,24 @@ class Application:
     def configuration(self, profile, overrides=None):
         return configuration_for_profile(self.config, profile, overrides)
 
+    def patient_configuration(self):
+        """Respect configured sources and downgrade only an unavailable graph."""
+        candidate = self.config.model_copy(deep=True)
+        if candidate.knowledge_enabled('kg'):
+            checks = inspect_environment(candidate).get('checks', [])
+            status = {item['name']: item.get('available') for item in checks}
+            if status.get('kg_release') is not True or status.get('graph') is not True:
+                candidate = candidate.model_copy(update={
+                    'main_agent': candidate.main_agent.model_copy(update={'use_kg': False}),
+                    'agents': {role: access.model_copy(update={'use_kg': False})
+                               for role, access in candidate.agents.items()},
+                })
+        kb, kg = candidate.knowledge_enabled('kb'), candidate.knowledge_enabled('kg')
+        profile = ('local-kb-kg' if kb and kg else 'local-kg' if kg else
+                   'kb-only' if kb else 'patient-only')
+        return candidate, profile
+
+    @tracked(lambda self: self.root)
     def submit_rwe(self, patient_number):
         from .knowledge import rwe_readiness
         if not isinstance(patient_number, str) or not patient_number.strip() or len(patient_number) > 128 or any(ord(c) < 32 for c in patient_number):
@@ -166,6 +202,7 @@ class Application:
                                     fingerprint(['rwe_import', payload, config]))
         return self.job(job['job_id'])
 
+    @tracked(lambda self: self.root)
     def retry_job(self, job_id, *, resume=False):
         from .locking import exclusive
         with exclusive(self.root, 'job_' + job_id):
@@ -195,10 +232,18 @@ class Application:
                 if not run_id:
                     raise ValueError('run_not_started_create_new_attempt')
                 engine = RunStore(config.resolve(config.database))
-                if engine.run(run_id)['deadline'] <= time.time():
+                saved = engine.objects(run_id, 'run_result')
+                if engine.run(run_id)['deadline'] <= time.time() and not saved:
                     raise ValueError('run_deadline_expired_create_new_attempt')
-                if engine.objects(run_id, 'run_result'):
-                    raise ValueError('run_already_finished_create_new_attempt')
+                if saved:
+                    if previous['status'] not in {'failed', 'interrupted'}:
+                        raise ValueError('run_already_finished_create_new_attempt')
+                    from neurogra.clinical.workflow import RunResult
+                    result = RunResult.model_validate(saved[-1]['payload'])
+                    if result.run_id != run_id or any(not self.inside(path).is_file()
+                                                      for path in result.report_paths.values()):
+                        raise ValueError('completed_report_artifacts_unavailable')
+                    self.patient(job['version_id'])  # Verify the bound input checksum before re-registering.
                 verify_execution_binding(engine, run_id)
             self.store.retry(job_id, resume_run_id=run_id)
         return self.job(job_id)
@@ -215,16 +260,28 @@ class Application:
             attempt['artifacts'] = self.artifacts(attempt['attempt_id'])
         return job
 
-    def register_artifacts(self, attempt_id, paths):
+    @tracked(lambda self: self.root)
+    def register_artifacts(self, attempt_id, paths, *, worker=None):
+        rows = []
         for kind, path in paths.items():
             path = self.inside(path)
             if not path.is_file():
                 raise ValueError('generated_artifact_missing')
             artifact_id = stable_id('artifact', [attempt_id, kind])
-            with self.store.connect() as db:
-                db.execute('INSERT OR REPLACE INTO artifacts VALUES(?,?,?,?,?,?,?)',
-                    (artifact_id, attempt_id, kind, path.relative_to(self.root).as_posix(),
-                     sha256_file(path), path.stat().st_size, 'available'))
+            rows.append((artifact_id, attempt_id, kind, path.relative_to(self.root).as_posix(),
+                         sha256_file(path), path.stat().st_size, 'available'))
+        with self.store.connect() as db:
+            db.execute('BEGIN IMMEDIATE')
+            try:
+                if worker is not None and db.execute("""SELECT 1 FROM attempts WHERE attempt_id=? AND worker=?
+                    AND status='running' AND lease_until>?""", (attempt_id, worker, time.time())).fetchone() is None:
+                    raise RuntimeError('worker_ownership_lost')
+                for row in rows:
+                    db.execute('INSERT OR REPLACE INTO artifacts VALUES(?,?,?,?,?,?,?)', row)
+                db.execute('COMMIT')
+            except BaseException:
+                db.execute('ROLLBACK')
+                raise
 
     def artifacts(self, attempt_id):
         with self.store.connect() as db:

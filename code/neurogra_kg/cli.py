@@ -3,6 +3,9 @@
 import argparse
 import json
 
+from neurogra_common.activity import active
+from neurogra_common.locking import exclusive
+
 from .config import load_config
 
 
@@ -30,6 +33,14 @@ def main(argv=None):
             command.add_argument("--evidence-id", required=True)
     args = parser.parse_args(argv)
     config = load_config(args.config)
+    from contextlib import nullcontext
+    lock = (exclusive(config.root, 'model_resource') if args.command in {
+        'probe', 'build', 'publish', 'retrieve', 'resume-query', 'train-complex'} else nullcontext())
+    with active(config.root, timeout=30), lock:
+        return run_command(args, config)
+
+
+def run_command(args, config):
     if args.command == "probe":
         from .diagnostics import probe
         result = probe(config, execute=not args.installed_only)

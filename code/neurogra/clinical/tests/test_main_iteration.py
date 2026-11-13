@@ -71,6 +71,92 @@ class MainIterationTests(unittest.TestCase):
         self.assertEqual(current["case_version"], 2)
         self.assertTrue(self.store.objects(self.preparation.run_id, "main_tool_result"))
 
+    def test_tool_distinguishes_budget_exhaustion_before_and_after_dispatch(self):
+        from neurogra.clinical.storage import BudgetExceeded
+
+        request = RequestContent(type='knowledge', question='核查量表解释', reason='补充本地依据')
+        for retrieval_limit, expected in ((0, 'budget_exhausted'), (1, 'failed')):
+            with self.subTest(retrieval_limit=retrieval_limit):
+                run_id = self.store.create_run({}, {'seconds': 60, 'retrieval': retrieval_limit})
+                tools = MainToolExecutor(self.preparation.snapshot, self.config, self.store, run_id)
+                with patch.object(tools, '_knowledge', side_effect=BudgetExceeded('embedding')) as backend:
+                    result = tools.execute(request, scope='synthetic')
+                self.assertEqual(result['status'], expected)
+                self.assertEqual(backend.call_count, retrieval_limit)
+                self.assertEqual(tools.execute(request, scope='synthetic'), result)
+                calls = self.store.summary(run_id)['calls']
+                self.assertEqual(sum(row['n'] for row in calls if row['kind'] == 'retrieval'), retrieval_limit)
+
+    def test_report_graph_resumes_committed_specialists_and_records_tool_dependencies(self):
+        from types import SimpleNamespace
+        from neurogra.clinical.collaboration_contracts import SubjectScope
+        from neurogra.clinical.collaboration_store import CollaborationStore
+        from neurogra.clinical.report_collaboration import ReportScheduler, report_collaboration
+
+        base, run_id = self.store, self.preparation.run_id
+        coordination = CollaborationStore(base)
+        coordination.create(run_id, SubjectScope(source_id='synthetic', project_id='1',
+            primary_patient='synthetic'), entry_kind='report', entry_key='report:' + run_id,
+            config_digest='synthetic-config')
+        finish = CollaborationStore.finish_task
+        interrupted = []
+
+        def interrupt_after_commit(instance, fence, task_id, *args, **kwargs):
+            result = finish(instance, fence, task_id, *args, **kwargs)
+            node = next(row for row in instance.snapshot(run_id)['tasks'] if row['task_id'] == task_id)
+            if node['kind'] == 'specialist.analyze' and not interrupted:
+                interrupted.append(task_id)
+                raise RuntimeError('synthetic-interruption')
+            return result
+
+        with self.assertRaisesRegex(RuntimeError, 'synthetic-interruption'):
+            with coordination.owned(run_id, 'first') as fence:
+                self.store = coordination.fenced_store(fence)
+                scheduler = ReportScheduler(coordination, fence, 'synthetic', self.config.enabled_roles(), lambda: None)
+                with report_collaboration(scheduler), patch.object(
+                        CollaborationStore, 'finish_task', autospec=True, side_effect=interrupt_after_commit):
+                    self.run_loop()
+        with coordination.owned(run_id, 'second') as fence:
+            self.store = coordination.fenced_store(fence)
+            scheduler = ReportScheduler(coordination, fence, 'synthetic', self.config.enabled_roles(), lambda: None)
+            with report_collaboration(scheduler):
+                state = self.run_loop()
+            scheduler.finish_synthesis(SimpleNamespace(run_id=run_id, status='partial', report_paths={}))
+        self.store = base
+        nodes = coordination.snapshot(run_id)['tasks']
+        self.assertEqual(coordination.snapshot(run_id)['state'], 'partial')
+        self.assertGreaterEqual(sum(row['kind'] == 'specialist.analyze' for row in nodes), 3)
+        self.assertGreaterEqual(sum(row['kind'] == 'patient.read' for row in nodes), 2)
+        self.assertTrue(any(row['task_id'] == 'report_synthesis' for row in nodes))
+        self.assertEqual(self.calls, {'cognition': 2, 'history': 1})
+        self.assertEqual(len(self.fetches), 1)
+        self.assertEqual(state['snapshot']['version'], 2)
+
+    def test_report_graph_node_limit_preserves_partial_result_and_synthesis_slot(self):
+        from types import SimpleNamespace
+        from neurogra.clinical.collaboration_contracts import SubjectScope
+        from neurogra.clinical.collaboration_store import CollaborationStore
+        from neurogra.clinical.report_collaboration import ReportScheduler, report_collaboration
+
+        base, run_id = self.store, self.preparation.run_id
+        coordination = CollaborationStore(base)
+        coordination.create(run_id, SubjectScope(source_id='synthetic', project_id='1',
+            primary_patient='synthetic'), entry_kind='report', entry_key='report:' + run_id,
+            config_digest='synthetic-config')
+        with coordination.owned(run_id, 'first') as fence:
+            self.store = coordination.fenced_store(fence)
+            scheduler = ReportScheduler(coordination, fence, 'synthetic', self.config.enabled_roles(), lambda: None)
+            with report_collaboration(scheduler), patch('neurogra.clinical.report_collaboration.MAX_GRAPH_NODES', 3):
+                state = self.run_loop()
+                self.assertEqual(state['stop_reason'], 'collaboration_node_limit')
+                self.assertIn('协作节点达到上限', '；'.join(state['unresolved']))
+                scheduler.finish_synthesis(SimpleNamespace(run_id=run_id, status='partial', report_paths={}))
+        self.store = base
+        graph = coordination.snapshot(run_id)
+        self.assertEqual(graph['state'], 'partial')
+        self.assertLessEqual(len(graph['tasks']), 3)
+        self.assertTrue(any(row['kind'] == 'answer.synthesize' for row in graph['tasks']))
+
     def test_missing_data_stops_without_inventing_negative_facts(self):
         state = self.run_loop(found=False)
         self.assertEqual(len(self.fetches), 1)
@@ -83,6 +169,99 @@ class MainIterationTests(unittest.TestCase):
         state = self.run_loop(repeat=True)
         self.assertEqual(len(self.fetches), 1)
         self.assertTrue(any("不重复执行" in text for text in state["unresolved"]))
+
+    def test_same_role_subtasks_are_preserved_and_only_requesting_task_is_reexecuted(self):
+        from neurogra.clinical.schemas import TaskPlan
+        original = next(task for task in self.preparation.plan.tasks if task.agent_type == 'cognition')
+        first = original.model_copy(deep=True, update={'task_id': 'synthetic-cognition-first',
+                                                       'questions': ['核对教育条件']})
+        second = original.model_copy(deep=True, update={'task_id': 'synthetic-cognition-second',
+                                                        'questions': ['分析访视记录']})
+        other = [task for task in self.preparation.plan.tasks if task.agent_type != 'cognition']
+        preparation = self.preparation.model_copy(deep=True, update={
+            'plan': TaskPlan(tasks=[*other, first, second])})
+        calls = []
+        outer = self
+
+        class Patient(PatientDataService):
+            def fetch_patient_data(inner, request, request_id):
+                outer.fetches.append(request_id)
+                raw = {'患者ID': inner.patient_id, '教育年限': 9}
+                snapshot = profile_case(ingest_patient(raw, inner.config), [], inner.config, None)
+                return DataFetchResult(request_id=request_id, patient_id=inner.patient_id, status='found',
+                                       records=snapshot.records, observations=snapshot.observations)
+
+        class Handler:
+            async def analyze(inner, task, context):
+                calls.append((task.agent_type, task.questions[0]))
+                result = AgentResult(result_id=identity('result', task.task_id), task_id=task.task_id,
+                    case_version=task.case_version, status='completed', claims=[
+                        Claim(claim_id=identity('claim', [task.task_id, row.observation_id]),
+                              text=row.quote, kind='description', level=task.agent_type,
+                              observation_ids=[row.observation_id], strength='descriptive')
+                        for row in context.snapshot.observations])
+                if task.questions == ['核对教育条件'] and not any(
+                        row.name == '教育年限' for row in context.snapshot.observations):
+                    result.requests.append(RequestContent(type='patient_data', question='补取已有教育记录',
+                        requested_fields=['教育年限'], source_refs=[context.snapshot.observations[0].observation_id],
+                        reason='量表解释条件缺失'))
+                return result
+
+        tools = MainToolExecutor(preparation.snapshot, self.config, self.store, preparation.run_id,
+                                 patient_service=Patient(preparation.snapshot, self.config))
+        state = run_main_loop(preparation, self.config, self.store,
+            handlers={role: Handler() for role in ('history', 'cognition', 'laboratory', 'imaging')},
+            tools=tools, main_factory=lambda _: MainAgent(None))
+        cognition = [row for row in state['tasks'].values() if row['agent_type'] == 'cognition']
+        self.assertEqual(len(cognition), 2)
+        self.assertEqual(len({row['task_id'] for row in cognition}), 2)
+        self.assertEqual(calls.count(('cognition', '核对教育条件')), 2)
+        self.assertEqual(calls.count(('cognition', '分析访视记录')), 1)
+        self.assertEqual(len(self.fetches), 1)
+        self.assertEqual(len([row for key, row in state['results'].items()
+                              if state['tasks'][key]['agent_type'] == 'cognition']), 2)
+        from neurogra.clinical.workflow import continue_run, Synthesis
+
+        def select(_gateway, _system, data, _schema):
+            return Synthesis(ordered_claim_ids=[row['claim_id'] for row in data['claims']])
+
+        with patch('neurogra.clinical.workflow.ModelGateway.generate_structured', select), \
+             patch('neurogra.clinical.narrative.add_narrative'):
+            report = continue_run(preparation, self.config).report
+        cognition_ids = {row['task_id'] for row in cognition}
+        self.assertEqual({row.task_id for row in report.agent_results if row.task_id in cognition_ids}, cognition_ids)
+
+    def test_deduplication_preserves_different_evidence_and_conditions(self):
+        from neurogra.clinical.workflow import claim_deduplication_key
+        claim = Claim(claim_id='one', text='条件性解释', kind='interpretation', level='cognition',
+                      observation_ids=['observation'], evidence_ids=['evidence-one'], strength='conditional',
+                      limitations=['条件需核实'], applicability='条件一')
+        self.assertEqual(claim_deduplication_key(claim),
+                         claim_deduplication_key(claim.model_copy(update={'claim_id': 'two'})))
+        self.assertNotEqual(claim_deduplication_key(claim), claim_deduplication_key(
+            claim.model_copy(update={'evidence_ids': ['evidence-two']})))
+        self.assertNotEqual(claim_deduplication_key(claim), claim_deduplication_key(
+            claim.model_copy(update={'applicability': '条件二'})))
+
+    def test_planner_keeps_distinct_tasks_for_one_role(self):
+        from neurogra.clinical.orchestration import PlanProposal, TaskProposal
+        proposals = []
+        for task in self.preparation.plan.tasks:
+            proposals.append(TaskProposal(agent_type=task.agent_type, input_refs=task.input_refs,
+                                          questions=['核对已有资料'], why='对应实际资料'))
+            if task.agent_type == 'cognition':
+                proposals.append(TaskProposal(agent_type=task.agent_type, input_refs=task.input_refs,
+                                              questions=['说明解释局限'], why='对应实际资料'))
+
+        class Gateway:
+            def generate_structured(inner, *_args):
+                return PlanProposal(tasks=proposals)
+
+        plan = MainAgent(Gateway()).plan(self.preparation.snapshot)
+        cognition = [task for task in plan.tasks if task.agent_type == 'cognition']
+        self.assertEqual(plan.mode, 'model')
+        self.assertEqual(len(cognition), 2)
+        self.assertEqual(len({task.task_id for task in cognition}), 2)
 
     def test_completed_loop_restore_has_no_new_tasks_or_budget_calls(self):
         first = self.run_loop()

@@ -106,7 +106,7 @@ class HistoryAgent:
     system = SYSTEM
 
     def batch_prompt(self):
-        return self.system + '\n每批只输出至多6条有用主张。每条claim的observation_ids只能有1至8个ID，优先只选1至3个，例：["O1"]；禁止把整批几十个ID填进一条claim。不需要用claim覆盖全部字段，批次覆盖由代码记录；没有新主张可返回claims=[]。无需逐项重述量表条目，原始字段完整保留。观察引用仅用本批O和背景B别名，知识引用仅用E别名。requests.source_refs只使用本批O/B/E别名。未执行影像工具，tool_result_ids必须为空。优先描述有来源的总分、日期及实际报告措辞。所有interpretation必须引用E证据并填写适用条件。uncertainties至多5条，只描述本批无法解决的问题，不断言全病例缺少其他资料。'
+        return self.system + '\n每批只输出至多6条有用主张。每条claim的observation_ids只能有1至8个ID，优先只选1至3个，例：["O1"]；禁止把整批几十个ID填进一条claim。不需要用claim覆盖全部字段，批次覆盖由代码记录；没有新主张可返回claims=[]。无需逐项重述量表条目，原始字段完整保留。观察引用仅用本批O和背景B别名，知识引用仅用E别名。跨专科核查材料只用于考虑分歧，不得将其中未经分配的观察ID当作本批引用。requests.source_refs只使用本批O/B/E别名。未执行影像工具，tool_result_ids必须为空。优先描述有来源的总分、日期及实际报告措辞。所有interpretation必须引用E证据并填写适用条件。uncertainties至多5条，只描述本批无法解决的问题，不断言全病例缺少其他资料。'
     async def analyze(self, task, context):
         facts = context.snapshot.observations
         from .utils import dumps
@@ -122,6 +122,7 @@ class HistoryAgent:
         bundle = SimpleNamespace(items=context.evidence)
         data = {"observations": [o.model_dump(mode="json") for o in facts], "originals": originals,
                 "evidence": evidence_view(bundle.items), "questions": task.questions,
+                "conflict_groups": context.snapshot.conflict_groups,
                 "allowed_evidence_ids": [e.evidence_id for e in bundle.items],
                 "previous_result": context.previous_result.model_dump(mode="json") if context.previous_result else None,
                 "request_outcomes": context.request_outcomes,
@@ -197,6 +198,9 @@ class HistoryAgent:
                 if isinstance(prepared, Exception):
                     raise prepared
                 data, aliases, evidence_aliases, manifest = prepared
+                if manifest['source_context_hashes']:
+                    partial = True
+                    uncertainties.append(f'第{batch_index + 1}批部分补充来源超出上下文范围，尚未核查。')
                 if hasattr(context.runtime, 'store'):
                     key = identity('context', [task.task_id, batch_index])
                     store = context.runtime.store

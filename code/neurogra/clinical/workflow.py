@@ -10,7 +10,7 @@ from .history import HistoryAgent
 from .specialists import CognitionAgent, LaboratoryAgent
 from .imaging import ImagingAgent
 from .diamond import DiamondTool
-from .utils import identity, write_json
+from .utils import fingerprint, identity, write_json
 from .iteration import run_main_loop
 from .reporting import render_report, render_data_appendix, TEMPLATE_VERSION
 
@@ -32,6 +32,13 @@ class RunResult(Contract):
 def latest(store, run_id, kind, object_id=None):
     rows = [r for r in store.objects(run_id, kind) if object_id is None or r['object_id'] == object_id]
     return max(rows, key=lambda r: r['version'])['payload'] if rows else None
+
+
+def claim_deduplication_key(claim):
+    """Only merge claims with the same sources, meaning and applicability."""
+    return identity('claim', [claim.text, claim.kind, sorted(claim.observation_ids),
+        sorted(claim.evidence_ids), sorted(claim.tool_result_ids), claim.strength,
+        sorted(claim.limitations), claim.diagnosis_label, claim.rationale, claim.applicability])
 
 
 def render_audit(report, preparation, results, evidence, reviews, mode):
@@ -117,11 +124,11 @@ def analyze_patient(raw, config):
     return continue_run(preparation, config)
 
 
-def resume_run(run_id, config):
+def resume_run(run_id, config, *, store=None):
     # Never reset model config, pinned release, budget counters or original deadline.
     if not run_id.isalnum() or len(run_id) != 32:
         raise ValueError('invalid_run_id')
-    store = RunStore(config.resolve(config.database))
+    store = store or RunStore(config.resolve(config.database))
     saved_config = ClinicalConfig.model_validate(json.loads(store.run(run_id)['config']))
     if latest(store, run_id, 'run_result') is None:
         from .execution import verify_execution_binding
@@ -136,11 +143,12 @@ def resume_run(run_id, config):
             store.mark_interrupted(run_id)
             if not path.exists():
                 prepare_run(source['raw'], saved_config, store, run_id, source['use_model'], source['query'])
-    return continue_run(PreparationResult.model_validate_json(path.read_text(encoding='utf-8')), saved_config)
+    return continue_run(PreparationResult.model_validate_json(path.read_text(encoding='utf-8')), saved_config,
+                        store=store)
 
 
-def continue_run(preparation, config):
-    store = RunStore(config.resolve(config.database))
+def continue_run(preparation, config, *, store=None):
+    store = store or RunStore(config.resolve(config.database))
     run_id = preparation.run_id
     with store.workflow_lock(run_id):
         from .diamond import DiamondResult
@@ -216,7 +224,7 @@ def continue_run(preparation, config):
         # Deduplicate the same statement and sources, without counting agents as independent evidence.
         deduplicated = {}
         for claim in claims:
-            key = identity('claim', [claim.text, sorted(claim.observation_ids)])
+            key = claim_deduplication_key(claim)
             if key in deduplicated:
                 dependencies[deduplicated[key].claim_id].extend(dependencies[claim.claim_id])
             else:
@@ -259,9 +267,16 @@ def continue_run(preparation, config):
         partial = (review_failed or any(i.code == 'rwe_form_failed' for i in preparation.issues)
                    or any(r.status in {'failed', 'partial'} for r in results)
                    or (mode == 'facts_template' and bool(preparation.plan.tasks)))
+        from .report_collaboration import current_report_scheduler
+        scheduler = current_report_scheduler()
+        partial = partial or bool(scheduler and scheduler.has_partial_results())
+        partial = partial or state['stop_reason'] in {'collaboration_node_limit', 'tool_budget_exhausted',
+                                                      'reserved_synthesis_budget', 'run_deadline'}
         assessment = ('unresolved' if review_failed
                       else 'conditional' if any(c.kind == 'interpretation' for c in claims) else 'insufficient_data')
         report = FinalReport(report_id=identity('report', run_id), patient_id=preparation.snapshot.patient_id, run_id=run_id,
+            snapshot_binding={'case_id': preparation.snapshot.case_id, 'version': preparation.snapshot.version,
+                              'digest': fingerprint(preparation.snapshot)},
             report_template_version=TEMPLATE_VERSION,
             status='partial' if partial else 'completed', assessment_status=assessment,
             summary='现有材料支持已提供资料范围内的描述与有限解释，不能确认当前诊断。' if claims else '未形成可用专业结论；已保留输入事实与处理局限。',

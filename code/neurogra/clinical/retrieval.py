@@ -1,5 +1,7 @@
 """Pinned clinical retrieval through the independent KG SDK."""
 import time
+from contextlib import nullcontext
+from neurogra_common.model_admission import admit_model
 from .config import ClinicalConfig
 from .schemas import CaseSnapshot, EvidenceBundle, EvidenceItem, Issue, RetrievalRequest
 from .utils import identity
@@ -74,7 +76,11 @@ class KnowledgeService:
         payload = {'config': self.config.model_dump(mode='json'), 'release_id': self.release_id,
                    'request': request.model_dump(mode='json'), 'backend': backend, 'deadline': deadline,
                    'snapshot': self._snapshot_payload()}
-        response = run_json_process([sys.executable, '-m', 'neurogra.clinical.retrieval_worker'], payload, deadline)
+        # The disposable subprocess cannot inherit ContextVars. Hold one ticket
+        # for its vector backend; that backend makes at most one embedding call.
+        admission = admit_model('retrieval_vector') if backend == 'vector' else nullcontext()
+        with admission:
+            response = run_json_process([sys.executable, '-m', 'neurogra.clinical.retrieval_worker'], payload, deadline)
         if response.get('error'):
             if response['error'] == 'TimeoutError':
                 raise TimeoutError('backend_deadline')

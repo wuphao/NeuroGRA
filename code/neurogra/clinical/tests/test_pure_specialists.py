@@ -62,6 +62,44 @@ class PureSpecialistTests(unittest.TestCase):
         asyncio.run(executor.execute_tasks(fallback_plan(self.snapshot), self.snapshot))
         self.assertEqual(original, self.snapshot.model_dump(mode="json"))
 
+    def test_conflicts_are_scoped_to_visible_facts_and_marked_in_batches(self):
+        from types import SimpleNamespace
+        from neurogra.clinical.config import ModelConfig
+        from neurogra.clinical.context import ContextBuilder
+        from neurogra.clinical.orchestration import scoped_snapshot
+
+        first = self.snapshot.observations[0]
+        second = first.model_copy(update={'observation_id': 'second', 'quote': '另一个记录'})
+        third = first.model_copy(update={'observation_id': 'third', 'quote': '不相关记录'})
+        snapshot = self.snapshot.model_copy(deep=True, update={
+            'observations': [first, second, third],
+            'conflict_groups': [[first.observation_id, 'second']],
+            'timeline': [first.observation_id, 'second', 'third']})
+        one_task = self.task.model_copy(update={'input_refs': [first.observation_id], 'background_refs': []})
+        self.assertEqual(scoped_snapshot(snapshot, one_task).conflict_groups, [])
+        task = self.task.model_copy(update={'input_refs': [first.observation_id, 'second'], 'background_refs': []})
+        scoped = scoped_snapshot(snapshot, task)
+        self.assertEqual(scoped.conflict_groups, [[first.observation_id, 'second']])
+        self.assertNotIn('third', scoped.timeline)
+        context = SimpleNamespace(snapshot=scoped, evidence=[], request_outcomes=[],
+                                  additional_context=[], previous_result=None)
+        data, _, _, _ = ContextBuilder(ModelConfig()).build(task, context, [scoped.observations[0]], 0)
+        self.assertEqual(data['conflict_groups'], [{'observation_ids': ['O1'], 'omitted_in_batch': 1}])
+
+    def test_omitted_cross_specialist_context_is_not_reported_as_fully_reviewed(self):
+        class Runtime:
+            async def generate_structured(self, system, data, schema):
+                return schema.model_validate({'claims': [], 'uncertainties': [], 'requests': []})
+
+            def record_analysis_batch(self, *_args):
+                pass
+
+        context = TaskContext(self.snapshot, Runtime(), additional_context=[{
+            'records': [{'kind': 'cross_specialist_observation', 'quote': 'x' * 5000}]}])
+        result = asyncio.run(HistoryAgent().analyze(self.task, context))
+        self.assertEqual(result.status, 'partial')
+        self.assertTrue(any('部分补充来源超出上下文范围' in item for item in result.uncertainties))
+
     def test_main_does_not_accept_invented_pending_request_reference(self):
         class Model:
             def generate_structured(inner, system, data, schema):

@@ -2,14 +2,18 @@
 
 import time
 
-from neurogra_kb import KBConfig, TextKnowledgeService, load_config as load_kb_config
-from neurogra_kg.runtime import Budget
 from neurogra_common import validate_references
-from .schemas import RequestContent, EvidenceItem
+from neurogra_kb import KBConfig, TextKnowledgeService
+from neurogra_kb import load_config as load_kb_config
+from neurogra_kg.runtime import Budget
+
+from .generation import patient_endpoint_allowed
+from .knowledge_adapter import map_patient_facts
+from .knowledge_adapter import settings as kg_settings
 from .patient_data import PatientDataService
-from .knowledge_adapter import patient_facts, map_patient_facts, settings as kg_settings
-from .utils import identity
+from .schemas import EvidenceItem, RequestContent
 from .storage import BudgetExceeded
+from .utils import identity
 
 
 class RunModelBudget:
@@ -145,6 +149,7 @@ class MainToolExecutor:
             data = saved.get('data', {})
             if data.get('source_path'):
                 from pathlib import Path
+
                 from .utils import sha256_file
                 path = Path(data['source_path'])
                 if not path.is_file() or sha256_file(path) != data['source_checksum']:
@@ -182,6 +187,11 @@ class MainToolExecutor:
                 else:
                     data = self.diamond.predict(self.snapshot, self.store.run(self.run_id)["deadline"])
                     result.update(status=data.status, data=data.model_dump(mode="json"))
+        except BudgetExceeded:
+            # If the tool call could not be reserved, its backend was never
+            # dispatched. A later budget failure may follow partial work and
+            # must not be represented as an unexecuted request.
+            result.update(status='budget_exhausted' if call_id is None else 'failed', error='BudgetExceeded')
         except Exception as exc:
             error = type(exc).__name__
             if isinstance(exc, ValueError) and str(exc).split(':')[0] in {
@@ -191,7 +201,7 @@ class MainToolExecutor:
         self.store.save(self.run_id, "main_tool_result", action_id, result)
         if call_id:
             self.store.settle(call_id, result["status"])
-        ledger.finish("failed" if result["status"] == "failed" else "completed")
+        ledger.finish("failed" if result["status"] in {"failed", "budget_exhausted"} else "completed")
         self._register(result)
         return result
 
@@ -199,8 +209,13 @@ class MainToolExecutor:
         access = access or self.config.main_agent
         items, statuses, gaps, data_requests = [], {}, [], []
         if access.use_kb and self.text is not None and self.text_release_id:
-            raw = self.text.search_text(request.question, release_id=self.text_release_id, budget=ledger)
+            embedding = self.text.config.embedding
+            vector_allowed = patient_endpoint_allowed(self.config.project_root, embedding.base_url, embedding.model)
+            raw = self.text.search_text(request.question, release_id=self.text_release_id, budget=ledger,
+                                        use_vector=vector_allowed)
             statuses.update({"kb_" + key: value for key, value in raw["backend_status"].items()})
+            if not vector_allowed:
+                statuses['kb_vector'] = 'blocked_patient_data_outbound'
             for row in raw["items"]:
                 items.append(EvidenceItem(evidence_id=row["evidence_id"], document_id=row["document_id"],
                     span_id=row["id"], title=row["title"], quote=row["text"], context=row["text"],
@@ -210,8 +225,8 @@ class MainToolExecutor:
         else:
             statuses["kb"] = "not_published" if access.use_kb else "disabled"
         if access.use_kg and self.graph_release_id and self.config.kg_representation == 'plain_triples':
-            from .triple_knowledge import retrieve_triples
             from .retrieval import fuse_evidence
+            from .triple_knowledge import retrieve_triples
             rankings = {}
             for backend in ('bm25', 'graph'):
                 status, found, metadata = retrieve_triples(self.config, self.graph_release_id,
@@ -219,16 +234,17 @@ class MainToolExecutor:
                 statuses['kg_' + backend] = status
                 rankings[backend] = found
             items.extend(fuse_evidence(rankings, 10))
+        elif access.use_kg and self.graph_release_id and not self._graph_outbound_allowed():
+            statuses['kg'] = 'blocked_patient_data_outbound'
         elif access.use_kg and self.graph_release_id:
-            from neurogra_kg.api import KnowledgeGraphService
-            from neurogra_kg.adapters.ollama_llm import OllamaLLMAdapter
             from neurogra_kg.adapters.ollama_embedding import OllamaEmbeddingAdapter
+            from neurogra_kg.adapters.ollama_llm import OllamaLLMAdapter
+            from neurogra_kg.api import KnowledgeGraphService
             from neurogra_kg.contracts.domain import RetrievalRequest as KGRequest
             cfg = kg_settings(self.config)
             llm = BudgetedPort(OllamaLLMAdapter(cfg.llm, cfg.resolve(cfg.paths.output_root)), ledger)
             embedding = BudgetedPort(OllamaEmbeddingAdapter(cfg.embedding, cfg.resolve(cfg.paths.output_root)), ledger)
             facts, mapping_audit = map_patient_facts(self.snapshot)
-            omitted = [row['observation_id'] for row in mapping_audit if row['status'] != 'mapped']
             # Query citations do not restrict the current-case facts needed for
             # applicability (e.g. age and function accompanying a biomarker query).
             self.store.event(self.run_id, 'graph_patient_mapping', {'scope': 'current_case',
@@ -274,6 +290,13 @@ class MainToolExecutor:
                 "gaps": gaps, "data_requests": data_requests,
                 "kb_release_id": self.text_release_id if access.use_kb else None,
                 "kg_release_id": self.graph_release_id if access.use_kg else None}
+
+    def _graph_outbound_allowed(self):
+        cfg = kg_settings(self.config)
+        endpoints = [(cfg.llm.base_url, cfg.llm.model), (cfg.embedding.base_url, cfg.embedding.model)]
+        if cfg.graph.provider != 'memory':
+            endpoints.append((cfg.graph.uri, ''))
+        return all(patient_endpoint_allowed(self.config.project_root, url, model) for url, model in endpoints)
 
     def reference_time(self):
         rows = self.store.objects(self.run_id, "analysis_time")

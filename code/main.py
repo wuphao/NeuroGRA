@@ -55,6 +55,13 @@ def main(argv=None):
         print(json.dumps({'status': 'valid', 'message': '校验通过', 'records': len(intake.records),
                           'roles': config.enabled_roles(), 'inference_executed': False}, ensure_ascii=False))
         return
+    from neurogra_common.activity import active
+    from neurogra_common.locking import exclusive
+    with active(config.project_root, timeout=30), exclusive(config.project_root, 'model_resource'):
+        return run_analysis(args, config, raw)
+
+
+def run_analysis(args, config, raw):
     from neurogra.clinical.workflow import analyze_patient
     log_path = config.resolve(args.log_dir) / (
         datetime.now(timezone.utc).strftime('%Y%m%d-%H%M%S') + '-' + new_id('session') + '.jsonl')

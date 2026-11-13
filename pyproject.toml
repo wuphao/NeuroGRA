@@ -18,6 +18,7 @@ dependencies = [
 [project.optional-dependencies]
 dev = ["build>=1.2,<2", "ruff>=0.11,<1"]
 rwe = ["psycopg2-binary>=2.9,<3", "requests>=2.31,<3"]
+chat-migration = ["psycopg[binary]>=3.3,<4", "python-dotenv>=1.2,<2"]
 clinical = ["openpyxl>=3.1,<4", "python-docx>=1.1,<2", "pydicom>=3,<4"]
 clinical-imaging = ["SimpleITK>=2.3,<3"]
 kg = ["numpy>=1.26,<3", "PyMuPDF>=1.24,<2"]

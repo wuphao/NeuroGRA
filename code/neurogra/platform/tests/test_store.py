@@ -8,7 +8,7 @@ from unittest.mock import patch
 
 from neurogra.platform.application import Application
 from neurogra.platform.configuration import resolve_config
-from neurogra.platform.store import PlatformStore
+from neurogra.platform.store import SCHEMA_VERSION, PlatformStore
 
 
 class StoreTests(unittest.TestCase):
@@ -62,6 +62,25 @@ class StoreTests(unittest.TestCase):
             self.app.store.finish(claim['attempt_id'], 'worker', 'succeeded')
         self.assertEqual(self.app.store.job(job['job_id'])['status'], 'interrupted')
 
+    def test_expired_worker_cannot_renew_commit_events_or_register_artifacts(self):
+        job = self.submit()
+        claim = self.app.store.claim('worker', lease_seconds=-1)
+        attempt = claim['attempt_id']
+        path = self.root / 'synthetic-report.md'
+        path.write_text('synthetic', encoding='utf-8')
+        for operation in (
+                lambda: self.app.store.heartbeat(attempt, 'worker'),
+                lambda: self.app.store.bind_run(attempt, 'worker', 'run'),
+                lambda: self.app.store.event(attempt, 'progress', {}, worker='worker'),
+                lambda: self.app.register_artifacts(attempt, {'markdown': path}, worker='worker'),
+                lambda: self.app.store.finish(attempt, 'worker', 'succeeded')):
+            with self.assertRaisesRegex(RuntimeError, 'worker_ownership_lost'):
+                operation()
+        self.assertFalse(self.app.store.events(attempt))
+        self.assertFalse(self.app.artifacts(attempt))
+        self.app.store.interrupt_expired()
+        self.assertEqual(self.app.store.job(job['job_id'])['status'], 'interrupted')
+
     def test_artifact_ids_enforce_boundary_and_integrity(self):
         self.submit()
         claim = self.app.store.claim('worker')
@@ -93,7 +112,7 @@ class StoreTests(unittest.TestCase):
         upgraded = PlatformStore(self.root)
         with upgraded.connect() as db:
             self.assertEqual(db.execute('SELECT plan FROM batches').fetchone()[0], '[]')
-            self.assertEqual(db.execute('PRAGMA user_version').fetchone()[0], 3)
+            self.assertEqual(db.execute('PRAGMA user_version').fetchone()[0], SCHEMA_VERSION)
         backups = list(upgraded.path.parent.glob('pre-migration-v2-*.sqlite'))
         self.assertEqual(len(backups), 1)
         with closing(sqlite3.connect(backups[0])) as old:
@@ -102,3 +121,37 @@ class StoreTests(unittest.TestCase):
             self.assertEqual(old.execute('SELECT job_id FROM jobs').fetchone()[0], job['job_id'])
         PlatformStore(self.root)
         self.assertEqual(len(list(upgraded.path.parent.glob('pre-migration-v2-*.sqlite'))), 1)
+
+    def test_scoped_patients_with_same_display_number_are_separate(self):
+        raw = {'患者ID': 'same-display-number', '病史': 'synthetic'}
+        source = {'kind': 'rwe_workspace', 'source_id': 'source-a', 'project_id': 1, 'patient_id': '7'}
+        first = self.app.import_case(raw, source=source)
+        same = self.app.import_case(raw, source=source)
+        other_project = self.app.import_case(raw, source={**source, 'project_id': 2})
+        other_source = self.app.import_case(raw, source={**source, 'source_id': 'source-b'})
+        self.assertEqual(first['version_id'], same['version_id'])
+        self.assertEqual(len({first['case_id'], other_project['case_id'], other_source['case_id']}), 3)
+        with self.app.store.connect() as db:
+            self.assertEqual(db.execute('SELECT count(*) FROM patient_scope').fetchone()[0], 3)
+            self.assertFalse(db.execute('PRAGMA foreign_key_check').fetchall())
+
+    def test_v3_case_uniqueness_migration_preserves_foreign_keys(self):
+        legacy_root = self.root / 'legacy'
+        path = legacy_root / 'data/platform/platform.sqlite'
+        path.parent.mkdir(parents=True)
+        with closing(sqlite3.connect(path)) as db:
+            db.executescript('''
+                CREATE TABLE cases(case_id TEXT PRIMARY KEY,patient_number TEXT NOT NULL UNIQUE,created REAL NOT NULL);
+                CREATE TABLE case_versions(version_id TEXT PRIMARY KEY,case_id TEXT NOT NULL REFERENCES cases(case_id),
+                    checksum TEXT NOT NULL,path TEXT NOT NULL,source TEXT NOT NULL,issues TEXT NOT NULL,
+                    created REAL NOT NULL,UNIQUE(case_id,checksum));
+                INSERT INTO cases VALUES('old_case','same',1);
+                INSERT INTO case_versions VALUES('old_version','old_case','hash','old.json','{}','[]',1);
+                PRAGMA user_version=3;
+            ''')
+        upgraded = PlatformStore(legacy_root)
+        with upgraded.connect() as db:
+            db.execute("INSERT INTO cases VALUES('new_case','same',2)")
+            self.assertEqual(db.execute("SELECT case_id FROM case_versions WHERE version_id='old_version'").fetchone()[0], 'old_case')
+            self.assertFalse(db.execute('PRAGMA foreign_key_check').fetchall())
+        self.assertEqual(len(list(path.parent.glob('pre-migration-v3-*.sqlite'))), 1)

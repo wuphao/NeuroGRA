@@ -8,7 +8,7 @@ from .parsing import parse_attachment, inspect_image
 from .profiling import profile_case
 from .orchestration import MainAgent
 from .retrieval import KnowledgeService, pin_release
-from .utils import fingerprint, write_json
+from .utils import write_json
 
 
 class PreparationResult(Contract):
@@ -22,9 +22,11 @@ class PreparationResult(Contract):
     artifact_path: str
 
 
-def create_context(config):
-    store = RunStore(config.resolve(config.database))
+def create_context(config, *, store=None, on_created=None):
+    store = store if store is not None else RunStore(config.resolve(config.database))
     run_id = store.create_run(config.model_dump(mode="json"), config.budget.model_dump())
+    if on_created is not None:
+        on_created(run_id)
     from .execution import execution_binding
     store.save(run_id, 'execution_binding', 'main', execution_binding())
     return store, run_id

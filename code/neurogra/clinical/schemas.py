@@ -418,11 +418,18 @@ class DiagnosticOutcome(Contract):
     selection_manifest: dict[str, JsonValue] = Field(default_factory=dict)
 
 
+class ReportSnapshotBinding(Contract):
+    case_id: str
+    version: int
+    digest: str
+
+
 class FinalReport(Contract):
     diagnostic_outcome: DiagnosticOutcome | None = None
     diagnostic_assessment: DiagnosticAssessment | None = None
     report_template_version: str = ''  # Empty for historical reports.
     report_id: str | None = None  # Historical reports remain readable; new reports are numbered by code.
+    snapshot_binding: ReportSnapshotBinding | None = None
     natural_language_report: str = ''
     narrative_method: str = ''
     narrative_status: Literal['not_generated', 'generated', 'unavailable'] = 'not_generated'

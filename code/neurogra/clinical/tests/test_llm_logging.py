@@ -10,7 +10,7 @@ from types import SimpleNamespace
 from unittest.mock import patch
 
 from neurogra.clinical.config import ClinicalConfig
-from neurogra.clinical.llm import ModelGateway
+from neurogra.clinical.llm import ModelFailure, ModelGateway
 from neurogra.clinical.schemas import Contract
 from neurogra.clinical.storage import RunStore
 from neurogra_common.llm_log import configure_llm_log, logged_model_call
@@ -43,7 +43,7 @@ class LLMLogTests(unittest.TestCase):
         def transport(url, payload, timeout):
             attempts.append(payload)
             if len(attempts) == 1:
-                raise urllib.error.URLError('synthetic transport failure')
+                raise urllib.error.URLError(ConnectionRefusedError('synthetic connection refused'))
             return {'message': {'content': '不是JSON' if len(attempts) == 2 else '{"ok":true}'},
                     'prompt_eval_count': 10, 'eval_count': 3}
         gateway = ModelGateway(config.model, store, run, transport=transport, scope='history')
@@ -60,6 +60,16 @@ class LLMLogTests(unittest.TestCase):
         self.assertEqual([r['response']['message']['content'] for r in rows if r['event'] == 'response'],
                          ['不是JSON', '{"ok":true}'])
         self.assertEqual(len([r for r in rows if r['event'] == 'error']), 1)
+
+    def test_timeout_after_send_is_indeterminate_and_not_retried(self):
+        config = ClinicalConfig(project_root=self.root)
+        store = RunStore(self.root / 'runs.sqlite')
+        run = store.create_run(config.model_dump(mode='json'), config.budget.model_dump())
+        transport = unittest.mock.Mock(side_effect=TimeoutError('synthetic timeout'))
+        with self.assertRaisesRegex(ModelFailure, 'model_call_indeterminate'):
+            ModelGateway(config.model, store, run, transport=transport).generate_structured('system', {}, Answer)
+        self.assertEqual(transport.call_count, 1)
+        self.assertEqual(store.summary(run)['calls'], [{'kind': 'llm', 'status': 'indeterminate', 'n': 1}])
 
     def test_kg_repair_and_cache_are_audited(self):
         calls = []
